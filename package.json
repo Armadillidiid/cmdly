@@ -5,9 +5,13 @@
   "packageManager": "pnpm@10.14.0",
   "license": "MIT",
   "description": "",
-  "main": "./dist/bin.cjs",
   "bin": {
     "cmd-sage": "./dist/bin.cjs"
+  },
+  "exports": {
+    "./bin": {
+      "require": "./dist/bin.cjs"
+    }
   },
   "files": [
     "dist"
@@ -19,9 +23,12 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines": {
+    "node": ">=23"
+  },
   "scripts": {
-    "build": "tsup",
-    "build:watch": "tsup --watch",
+    "build": "node scripts/build.ts",
+    "build:watch": "node scripts/build.ts --watch",
     "prepare": "effect-language-service patch",
     "clean": "rimraf dist/*",
     "typecheck": "tsc -b tsconfig.json",
@@ -39,7 +46,7 @@
     "@effect/vitest": "^0.27.0",
     "@types/node": "^24.10.1",
     "effect": "^3.19.9",
-    "tsup": "^8.5.1",
+    "pkgroll": "^2.21.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
