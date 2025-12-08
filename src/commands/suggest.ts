@@ -1,5 +1,8 @@
-import { Command, Options } from "@effect/cli";
-import { Effect, Option } from "effect";
+import { Command, Options, Args } from "@effect/cli";
+import { Console, Effect, Layer, Option } from "effect";
+import { AiService } from "@/services/ai.js";
+
+const programLayer = Layer.mergeAll(AiService.Default);
 
 const targetChoices = ["shell", "git"] as const;
 
@@ -12,17 +15,22 @@ const shellOut = Options.file("shellOut").pipe(
   Options.optional,
 );
 
+const prompt = Args.text({ name: "prompt" });
+
 const suggestCommand = Command.make(
   "suggest",
   {
     target: target,
     shellOut: shellOut,
+    prompt: prompt,
   },
-  ({ target, shellOut }) =>
-    Effect.sync(() => {
+  ({ target, shellOut, prompt }) =>
+    Effect.gen(function* () {
       const shellOutValue = Option.getOrNull(shellOut);
-      console.log(`Suggestions for query: ${target} ${shellOutValue}`);
-    }),
+      const ai = yield* AiService;
+      const res = yield* ai.suggest(target, prompt);
+      yield* Console.log(`AI Suggestion for ${target}:\n${res}`);
+    }).pipe(Effect.provide(programLayer)),
 );
 
 export { suggestCommand };

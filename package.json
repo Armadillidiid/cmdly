@@ -50,5 +50,9 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.80",
+    "ai": "^5.0.108"
   }
 }
