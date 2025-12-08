@@ -9,7 +9,7 @@ export type Provider =
   | "openai"
   | "anthropic"
   | "google"
-  | "github"
+  | "github-models"
   | (string & {});
 
 export const getProvider = (providerName: Provider, apiKey?: string) =>
@@ -27,7 +27,7 @@ export const getProvider = (providerName: Provider, apiKey?: string) =>
         return createAnthropic({ apiKey });
       case "google":
         return createGoogleGenerativeAI({ apiKey });
-      case "github":
+      case "github-models":
         return createOpenAICompatible({
           name: "github",
           apiKey: apiKey,
@@ -39,25 +39,3 @@ export const getProvider = (providerName: Provider, apiKey?: string) =>
         );
     }
   });
-
-export const getDefaultModel = (
-  providerName: Provider,
-): Effect.Effect<string, UnknownProviderError> =>
-  Effect.gen(function* () {
-    switch (providerName) {
-      case "openai":
-        return "gpt-4o-mini";
-      case "anthropic":
-        return "claude-3-5-sonnet-20241022";
-      case "google":
-        return "gemini-2.0-flash-exp";
-      case "github":
-        return "gpt-4o";
-      default:
-        return yield* Effect.fail(
-          new UnknownProviderError({ provider: providerName }),
-        );
-    }
-  });
-
-

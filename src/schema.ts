@@ -11,7 +11,7 @@ export const credentialsSchema = Schema.Struct({
   openai: Schema.optional(Schema.String),
   anthropic: Schema.optional(Schema.String),
   google: Schema.optional(Schema.String),
-  github: Schema.optional(Schema.String),
+  "github-models": Schema.optional(Schema.String),
 });
 export type Credentials = typeof credentialsSchema.Type;
 
@@ -73,4 +73,3 @@ export const modelsDevResponseSchema = Schema.Struct({
   providers: Schema.Array(providerInfoSchema),
 });
 export type ModelsDevResponse = typeof modelsDevResponseSchema.Type;
-

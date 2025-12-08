@@ -15,7 +15,7 @@ const CREDENTIALS_FILENAME = "credentials.json";
 
 const DEFAULT_CONFIG: Config = {
   model: "gpt-4o",
-  provider: "github",
+  provider: "github-models",
 };
 
 export {
