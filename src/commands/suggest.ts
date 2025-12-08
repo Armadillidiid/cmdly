@@ -10,10 +10,6 @@ const target = Options.choice("target", targetChoices).pipe(
   Options.withAlias("t"),
   Options.withDefault(targetChoices[0]),
 );
-const shellOut = Options.file("shellOut").pipe(
-  Options.withAlias("s"),
-  Options.optional,
-);
 
 const prompt = Args.text({ name: "prompt" });
 
@@ -21,19 +17,13 @@ const suggestCommand = Command.make(
   "suggest",
   {
     target: target,
-    shellOut: shellOut,
     prompt: prompt,
   },
-  ({ target, shellOut, prompt }) =>
+  ({ target, prompt }) =>
     Effect.gen(function* () {
       const ai = yield* AiService;
       const res = yield* ai.suggest(target, prompt);
       yield* Console.log(`AI Suggestion for ${target}:\n${res}`);
-      
-      // TODO: Implement shellOut functionality
-      if (Option.isSome(shellOut)) {
-        yield* Console.log(`Shell out path: ${shellOut.value}`);
-      }
     }).pipe(Effect.provide(programLayer)),
 );
 
