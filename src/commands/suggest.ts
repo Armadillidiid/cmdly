@@ -26,10 +26,14 @@ const suggestCommand = Command.make(
   },
   ({ target, shellOut, prompt }) =>
     Effect.gen(function* () {
-      const shellOutValue = Option.getOrNull(shellOut);
       const ai = yield* AiService;
       const res = yield* ai.suggest(target, prompt);
       yield* Console.log(`AI Suggestion for ${target}:\n${res}`);
+      
+      // TODO: Implement shellOut functionality
+      if (Option.isSome(shellOut)) {
+        yield* Console.log(`Shell out path: ${shellOut.value}`);
+      }
     }).pipe(Effect.provide(programLayer)),
 );
 

@@ -1,4 +1,4 @@
-import { Command, Args } from "@effect/cli";
+import { Command } from "@effect/cli";
 import { Effect } from "effect";
 import { NAME, VERSION } from "./constants.js";
 import { suggestCommand } from "./commands/suggest.js";
