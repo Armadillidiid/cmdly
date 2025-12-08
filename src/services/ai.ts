@@ -1,19 +1,13 @@
 import { Effect } from "effect";
 import { generateText } from "ai";
-import { openai, createOpenAI } from "@ai-sdk/openai";
+import { githubProvider } from "@/lib/providers.js";
 import { explainPrompt, suggestPrompt } from "@/lib/prompts.js";
 
 const aiService = Effect.gen(function* () {
-  const openAi = createOpenAI({
-    apiKey:
-      process.env.OPENAI_API_KEY ??
-      "",
-  });
-
   const defaultOpts: Parameters<typeof generateText>[0] & {
     maxTokens: number;
   } = {
-    model: openAi("gpt-4o-mini"),
+    model: githubProvider("gpt-4o-mini"),
     maxTokens: 1024,
     messages: [],
   };

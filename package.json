@@ -52,7 +52,7 @@
     "vitest": "^4.0.15"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.80",
+    "@ai-sdk/openai-compatible": "^1.0.28",
     "ai": "^5.0.108"
   }
 }
