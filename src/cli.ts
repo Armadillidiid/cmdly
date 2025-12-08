@@ -1,14 +1,11 @@
-import * as Command from "@effect/cli/Command";
+import { Command } from "@effect/cli";
 import { Effect } from "effect";
+import { NAME, VERSION } from "./constants.js";
 
-declare const __VERSION__: string;
-const VERSION: string =
-  typeof __VERSION__ !== "undefined" ? __VERSION__ : "0.0.0-dev";
-
-const mainCommand = Command.make("cmd-sage", {}, () =>
+const mainCommand = Command.make(NAME, {}, () =>
   Effect.sync(() => {
     console.log(
-      `cmd-sage v${VERSION}. run cmd-sage --help for more information.`,
+      `${NAME} v${VERSION}. run ${NAME} --help for more information.`,
     );
   }),
 );
@@ -20,7 +17,7 @@ const cliService = Effect.gen(function* () {
   return {
     run: (argv: string[]) =>
       Command.run(mainCommand, {
-        name: "cmd-sage",
+        name: NAME,
         version: VERSION,
       })(argv),
   };
