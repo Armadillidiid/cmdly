@@ -14,8 +14,8 @@ const STATE_DIRECTORY = `~/.local/state/${NAME}`;
 const CREDENTIALS_FILENAME = "credentials.json";
 
 const DEFAULT_CONFIG: Config = {
-  model: "gpt-4o-mini",
-  provider: "github-copilot",
+  model: "gpt-4o",
+  provider: "github",
 };
 
 export {

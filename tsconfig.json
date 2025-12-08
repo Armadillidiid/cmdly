@@ -29,7 +29,6 @@
     "noImplicitThis": true,
     "noUncheckedIndexedAccess": true,
     "strictNullChecks": true,
-    "baseUrl": ".",
     "target": "esnext",
     "module": "NodeNext",
     "incremental": true,

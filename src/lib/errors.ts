@@ -16,3 +16,24 @@ export class FileSystemError extends TaggedError("FileSystemError")<{
   readonly path?: string;
   readonly cause?: unknown;
 }> {}
+
+export class UnknownProviderError extends TaggedError("UnknownProviderError")<{
+  readonly provider: string;
+}> {
+  get message() {
+    return `Unknown provider: ${this.provider}`;
+  }
+}
+
+export class MissingApiKeyError extends TaggedError("MissingApiKeyError")<{
+  readonly provider: string;
+}> {
+  get message() {
+    return `Missing API key for provider: ${this.provider}`;
+  }
+}
+
+export class ModelsFetchError extends TaggedError("ModelsFetchError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}

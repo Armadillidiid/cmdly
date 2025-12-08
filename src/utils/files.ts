@@ -1,49 +1,40 @@
-import * as path from "node:path";
-import * as fs from "node:fs";
 import * as os from "node:os";
 import { Effect, Schema } from "effect";
+import { FileSystem, Path } from "@effect/platform";
+import type { PlatformError } from "@effect/platform/Error";
 import { FileSystemError } from "@/lib/errors.js";
 
-export const expandHome = (filePath: string): string =>
-  filePath.startsWith("~/")
-    ? path.join(os.homedir(), filePath.slice(2))
-    : filePath;
+export const expandHome = (
+  filePath: string,
+): Effect.Effect<string, never, Path.Path> =>
+  Effect.gen(function* () {
+    if (!filePath.startsWith("~/")) {
+      return filePath;
+    }
+    const path = yield* Path.Path;
+    return path.join(os.homedir(), filePath.slice(2));
+  });
 
 /**
  * Check if a file exists
  */
-export const fileExists = (filePath: string) =>
-  Effect.tryPromise({
-    try: async () => {
-      try {
-        await fs.promises.access(filePath, fs.constants.F_OK);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    catch: (error) =>
-      new FileSystemError({
-        message: "Failed to check file existence",
-        operation: "access",
-        path: filePath,
-        cause: error,
-      }),
+export const fileExists = (
+  filePath: string,
+): Effect.Effect<boolean, PlatformError, FileSystem.FileSystem> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    return yield* fs.exists(filePath);
   });
 
 /**
  * Ensure a directory exists, creating it recursively if needed
  */
-export const ensureDirectory = (dir: string) =>
-  Effect.tryPromise({
-    try: () => fs.promises.mkdir(dir, { recursive: true }),
-    catch: (error) =>
-      new FileSystemError({
-        message: "Failed to create directory",
-        operation: "mkdir",
-        path: dir,
-        cause: error,
-      }),
+export const ensureDirectory = (
+  dir: string,
+): Effect.Effect<void, PlatformError, FileSystem.FileSystem> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* fs.makeDirectory(dir, { recursive: true });
   });
 
 /**
@@ -52,21 +43,14 @@ export const ensureDirectory = (dir: string) =>
 export const readJsonFile = <A, I, R>(
   filePath: string,
   schema: Schema.Schema<A, I, R>,
-) =>
+): Effect.Effect<A, PlatformError | FileSystemError, FileSystem.FileSystem | R> =>
   Effect.gen(function* () {
-    const content = yield* Effect.tryPromise({
-      try: () => fs.promises.readFile(filePath, "utf-8"),
-      catch: (error) =>
-        new FileSystemError({
-          message: "Failed to read file",
-          operation: "readFile",
-          path: filePath,
-          cause: error,
-        }),
-    });
+    const fs = yield* FileSystem.FileSystem;
+
+    const content = yield* fs.readFileString(filePath);
 
     const parsed = yield* Effect.try({
-      try: () => JSON.parse(content),
+      try: () => JSON.parse(content) as unknown,
       catch: (error) =>
         new FileSystemError({
           message: "Failed to parse JSON",
@@ -76,23 +60,29 @@ export const readJsonFile = <A, I, R>(
         }),
     });
 
-    return yield* Schema.decode(schema)(parsed);
+    return yield* Schema.decodeUnknown(schema)(parsed).pipe(
+      Effect.mapError(
+        (error) =>
+          new FileSystemError({
+            message: "Failed to validate JSON schema",
+            operation: "Schema.decode",
+            path: filePath,
+            cause: error,
+          }),
+      ),
+    );
   });
 
 /**
  * Write a JSON file with pretty formatting
  */
-export const writeJsonFile = (filePath: string, data: unknown) =>
-  Effect.tryPromise({
-    try: () =>
-      fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8"),
-    catch: (error) =>
-      new FileSystemError({
-        message: "Failed to write file",
-        operation: "writeFile",
-        path: filePath,
-        cause: error,
-      }),
+export const writeJsonFile = (
+  filePath: string,
+  data: unknown,
+): Effect.Effect<void, PlatformError, FileSystem.FileSystem> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* fs.writeFileString(filePath, JSON.stringify(data, null, 2));
   });
 
 /**
@@ -100,44 +90,33 @@ export const writeJsonFile = (filePath: string, data: unknown) =>
  * @param filePath Path to the file
  * @param mode Numeric mode (e.g., 0o600 for read/write owner only)
  */
-export const setFilePermissions = (filePath: string, mode: number) =>
+export const setFilePermissions = (
+  filePath: string,
+  mode: number,
+): Effect.Effect<void, PlatformError, FileSystem.FileSystem> =>
   Effect.gen(function* () {
     if (process.platform === "win32") {
       // Skip on Windows
       return;
     }
-    yield* Effect.tryPromise({
-      try: () => fs.promises.chmod(filePath, mode),
-      catch: (error) =>
-        new FileSystemError({
-          message: "Failed to set file permissions",
-          operation: "chmod",
-          path: filePath,
-          cause: error,
-        }),
-    });
+    const fs = yield* FileSystem.FileSystem;
+    yield* fs.chmod(filePath, mode);
   });
 
 /**
  * Check file permissions (Unix only)
  * Returns the file mode or undefined on Windows
  */
-export const getFilePermissions = (filePath: string) =>
+export const getFilePermissions = (
+  filePath: string,
+): Effect.Effect<number | undefined, PlatformError, FileSystem.FileSystem> =>
   Effect.gen(function* () {
     if (process.platform === "win32") {
       return undefined;
     }
-    const stats = yield* Effect.tryPromise({
-      try: () => fs.promises.stat(filePath),
-      catch: (error) =>
-        new FileSystemError({
-          message: "Failed to get file stats",
-          operation: "stat",
-          path: filePath,
-          cause: error,
-        }),
-    });
-    return stats.mode & 0o777;
+    const fs = yield* FileSystem.FileSystem;
+    const info = yield* fs.stat(filePath);
+    return info.mode & 0o777;
   });
 
 /**
@@ -146,7 +125,7 @@ export const getFilePermissions = (filePath: string) =>
 export const ensureFilePermissions = (
   filePath: string,
   expectedMode: number,
-) =>
+): Effect.Effect<void, PlatformError, FileSystem.FileSystem> =>
   Effect.gen(function* () {
     const currentMode = yield* getFilePermissions(filePath);
     if (currentMode !== undefined && currentMode !== expectedMode) {
@@ -172,9 +151,14 @@ export const loadJsonConfig = <A, I, R>(
       created?: string;
     };
   },
-) =>
+): Effect.Effect<
+  A,
+  PlatformError | FileSystemError,
+  FileSystem.FileSystem | Path.Path | R
+> =>
   Effect.gen(function* () {
-    const expandedPath = expandHome(filePath);
+    const path = yield* Path.Path;
+    const expandedPath = yield* expandHome(filePath);
     const exists = yield* fileExists(expandedPath);
 
     if (!exists) {
@@ -209,3 +193,4 @@ export const loadJsonConfig = <A, I, R>(
       return yield* readJsonFile(expandedPath, schema);
     }
   });
+

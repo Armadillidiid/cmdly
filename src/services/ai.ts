@@ -1,13 +1,42 @@
-import { Effect } from "effect";
+import { Effect, Data } from "effect";
 import { generateText } from "ai";
-import { githubProvider } from "@/lib/providers.js";
+import { getProvider, type Provider } from "@/lib/providers.js";
 import { explainPrompt, suggestPrompt } from "@/lib/prompts.js";
+import { ConfigService } from "./config.js";
+import { CredentialsService } from "./credentials.js";
+import type { Credentials } from "@/schema.js";
+
+export class AiServiceError extends Data.TaggedError("AiServiceError")<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
 
 const aiService = Effect.gen(function* () {
+  const config = yield* ConfigService;
+  const credentials = yield* CredentialsService;
+
+  const configData = yield* config.config();
+  const providerName = configData.provider as Provider;
+  const model = configData.model;
+
+  // Get API key for the configured provider (map provider name to credential key)
+  const credentialKey = providerName as keyof Credentials;
+  const apiKey = yield* credentials.getApiKey(credentialKey);
+
+  if (!apiKey) {
+    return yield* Effect.fail(
+      new AiServiceError({
+        message: `No API key found for provider: ${providerName}`,
+      }),
+    );
+  }
+
+  const provider = yield* getProvider(providerName, apiKey);
+
   const defaultOpts: Parameters<typeof generateText>[0] & {
     maxTokens: number;
   } = {
-    model: githubProvider("gpt-4o-mini"),
+    model: provider(model),
     maxTokens: 1024,
     messages: [],
   };
@@ -21,7 +50,11 @@ const aiService = Effect.gen(function* () {
             system: suggestPrompt(target),
             messages: [{ role: "user", content: prompt }],
           }),
-        catch: (err) => new Error(`AI suggestion failed: ${String(err)}`),
+        catch: (err) =>
+          new AiServiceError({
+            message: "AI suggestion failed",
+            cause: err,
+          }),
       });
       return res.text;
     });
@@ -35,7 +68,11 @@ const aiService = Effect.gen(function* () {
             system: explainPrompt(),
             messages: [{ role: "user", content: prompt }],
           }),
-        catch: (err) => new Error(`AI explanation failed: ${String(err)}`),
+        catch: (err) =>
+          new AiServiceError({
+            message: "AI explanation failed",
+            cause: err,
+          }),
       });
       return res.text;
     });
@@ -48,4 +85,5 @@ const aiService = Effect.gen(function* () {
 
 export class AiService extends Effect.Service<AiService>()("AiService", {
   effect: aiService,
+  dependencies: [ConfigService.Default, CredentialsService.Default],
 }) {}

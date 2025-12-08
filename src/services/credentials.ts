@@ -1,6 +1,6 @@
 import { Effect } from "effect";
+import { Path } from "@effect/platform";
 import { STATE_DIRECTORY, CREDENTIALS_FILENAME } from "@/constants.js";
-import * as path from "path";
 import {
   loadJsonConfig,
   writeJsonFile,
@@ -19,6 +19,7 @@ const DEFAULT_CREDENTIALS: Credentials = {};
  * Sets file permissions to 0600 (read/write for owner only) for security
  */
 const loadCredentials = Effect.gen(function* () {
+  const path = yield* Path.Path;
   const credentialsPath = path.join(STATE_DIRECTORY, CREDENTIALS_FILENAME);
 
   return yield* loadJsonConfig(
@@ -49,9 +50,9 @@ const loadCredentials = Effect.gen(function* () {
  */
 const saveCredentials = (credentials: Credentials) =>
   Effect.gen(function* () {
-    const credentialsPath = expandHome(
-      path.join(STATE_DIRECTORY, CREDENTIALS_FILENAME),
-    );
+    const path = yield* Path.Path;
+    const credentialsPathRaw = path.join(STATE_DIRECTORY, CREDENTIALS_FILENAME);
+    const credentialsPath = yield* expandHome(credentialsPathRaw);
 
     // Ensure directory exists
     const stateDir = path.dirname(credentialsPath);
