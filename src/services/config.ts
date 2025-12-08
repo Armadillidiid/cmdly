@@ -5,9 +5,14 @@ import {
   CONFIG_FILENAME,
   DEFAULT_CONFIG,
 } from "@/constants.js";
-import { loadJsonConfig } from "@/utils/files.js";
+import {
+  loadJsonConfig,
+  writeJsonFile,
+  expandHome,
+  ensureDirectory,
+} from "@/utils/files.js";
 import { ConfigError } from "@/lib/errors.js";
-import { configSchema } from "@/schema.js";
+import { configSchema, Config } from "@/schema.js";
 
 const onStartLoadConfig = Effect.gen(function* () {
   const path = yield* Path.Path;
@@ -29,10 +34,46 @@ const onStartLoadConfig = Effect.gen(function* () {
   );
 });
 
+/**
+ * Save config to ~/.config/cmd-sage/cmd-sage.json
+ */
+const saveConfig = (config: Config) =>
+  Effect.gen(function* () {
+    const path = yield* Path.Path;
+    const configPathRaw = path.join(CONFIG_DIRECTORY, CONFIG_FILENAME);
+    const configPath = yield* expandHome(configPathRaw);
+
+    // Ensure directory exists
+    const configDir = path.dirname(configPath);
+    yield* ensureDirectory(configDir).pipe(
+      Effect.mapError(
+        (error) =>
+          new ConfigError({
+            message: "Failed to create config directory",
+            cause: error,
+          }),
+      ),
+    );
+
+    // Write config
+    yield* writeJsonFile(configPath, config).pipe(
+      Effect.mapError(
+        (error) =>
+          new ConfigError({
+            message: "Failed to write config file",
+            cause: error,
+          }),
+      ),
+    );
+
+    yield* Effect.log(`Config saved to ${configPath}`);
+  });
+
 const configService = Effect.gen(function* () {
   const config = yield* onStartLoadConfig;
   return {
     config: () => Effect.succeed(config),
+    saveConfig: (newConfig: Config) => saveConfig(newConfig),
   };
 });
 

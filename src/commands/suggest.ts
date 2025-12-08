@@ -1,5 +1,5 @@
 import { Command, Options, Args } from "@effect/cli";
-import { Console, Effect, Layer, Option } from "effect";
+import { Console, Effect, Layer } from "effect";
 import { AiService } from "@/services/ai.js";
 
 const programLayer = Layer.mergeAll(AiService.Default);
