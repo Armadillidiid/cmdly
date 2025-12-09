@@ -1,6 +1,7 @@
 import { Args, Command, Prompt } from "@effect/cli";
 import { Console, Effect, Layer, Option } from "effect";
 import { AiService } from "@/services/ai.js";
+import { highlightMarkdown } from "@/utils/highlight.js";
 
 const programLayer = Layer.mergeAll(AiService.Default);
 
@@ -29,7 +30,8 @@ const explainCommand = Command.make(
 
 			const ai = yield* AiService;
 			const explanation = yield* ai.explain(userCommand);
-			yield* Console.log(explanation);
+			const highlighted = yield* highlightMarkdown(explanation);
+			yield* Console.log(highlighted);
 		}).pipe(Effect.provide(programLayer)),
 );
 

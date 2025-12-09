@@ -60,7 +60,8 @@
 		"@ai-sdk/google": "^2.0.44",
 		"@ai-sdk/openai": "^2.0.80",
 		"@ai-sdk/openai-compatible": "^1.0.28",
-		"ai": "^5.0.108"
-		"clipboardy": "^5.0.1",
+		"@shikijs/cli": "^3.19.0",
+		"ai": "^5.0.108",
+		"clipboardy": "^5.0.1"
 	}
 }

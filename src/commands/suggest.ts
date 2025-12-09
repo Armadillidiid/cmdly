@@ -5,6 +5,7 @@ import { AiService } from "@/services/ai.js";
 import { ConfigService } from "@/services/config.js";
 import type { SuggestAction } from "@/types.js";
 import { handleAction } from "@/utils/actions.js";
+import { highlightShell } from "@/utils/highlight.js";
 
 const programLayer = Layer.mergeAll(AiService.Default, ConfigService.Default);
 
@@ -134,7 +135,8 @@ const getSuggestAndLog = (
 ) =>
 	Effect.gen(function* () {
 		const command = yield* ai.suggest(target, messages);
-		yield* Console.log(`\n${command}\n`);
+		const highlighted = yield* highlightShell(command);
+		yield* Console.log(`\n${highlighted}\n`);
 		return command;
 	});
 
