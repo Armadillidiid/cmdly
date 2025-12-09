@@ -1,6 +1,10 @@
 import { FileSystem, Path } from "@effect/platform";
 import { Effect, Option, Schema } from "effect";
-import { STATE_DIRECTORY } from "@/constants.js";
+import {
+	MODELS_CACHE_MAX_AGE_MS,
+	MODELS_CACHE_FILENAME,
+	STATE_DIRECTORY,
+} from "@/constants.js";
 import { ModelsFetchError } from "@/lib/errors.js";
 import { modelsDevResponseSchema } from "@/schema.js";
 import {
@@ -10,9 +14,6 @@ import {
 	readJsonFile,
 	writeJsonFile,
 } from "@/utils/files.js";
-
-const MODELS_CACHE_FILENAME = "models-cache.json";
-const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
  * Get the path to the models cache file
@@ -35,7 +36,7 @@ const isCacheStale = (filePath: string) =>
 		// mtime is an Option<Date>, extract it or default to epoch
 		const mtimeMs = Option.getOrElse(info.mtime, () => new Date(0)).getTime();
 		const age = Date.now() - mtimeMs;
-		return age > CACHE_MAX_AGE_MS;
+		return age > MODELS_CACHE_MAX_AGE_MS;
 	});
 
 /**
