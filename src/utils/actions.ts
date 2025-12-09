@@ -83,7 +83,6 @@ export const copyCommand = (command: string) =>
 
 /**
  * Handle the selected action for a suggested command
- * Returns [shouldContinue, newCommand?, newMessages?]
  */
 export const handleAction = (
 	action: SuggestAction,
@@ -95,11 +94,7 @@ export const handleAction = (
 		switch (action) {
 			case "run":
 				yield* runCommand(command);
-				return [false, undefined, undefined] as [
-					boolean,
-					string | undefined,
-					ModelMessage[] | undefined,
-				];
+				return { shouldContinue: false };
 
 			case "revise": {
 				const revision = yield* Prompt.text({
@@ -112,46 +107,36 @@ export const handleAction = (
 					},
 				});
 
-				const ai = yield* AiService;
-				const newMessages: ModelMessage[] = [
-					...messages,
-					{ role: "user", content: revision },
-				];
-				const revisedCommand = yield* ai.suggest(target, newMessages);
-				yield* Console.log(`\n${revisedCommand}\n`);
+			const ai = yield* AiService;
+			const newMessages: ModelMessage[] = [
+				...messages,
+				{ role: "user", content: revision },
+			];
+			const revisedCommand = yield* ai.suggest(target, newMessages);
+			yield* Console.log(`\n${revisedCommand}\n`);
 
-				return [
-					true,
-					revisedCommand,
-					[...newMessages, { role: "assistant", content: revisedCommand }],
-				] as [boolean, string | undefined, ModelMessage[] | undefined];
-			}
+			return {
+				shouldContinue: true,
+				messages: [
+					...newMessages,
+					{ role: "assistant", content: revisedCommand },
+				] satisfies ModelMessage[],
+			};
+		}
 
 			case "explain": {
 				const ai = yield* AiService;
 				const explanation = yield* ai.explain(command);
 				yield* Console.log(`\n${explanation}\n`);
-				return [true, undefined, undefined] as [
-					boolean,
-					string | undefined,
-					ModelMessage[] | undefined,
-				];
+				return { shouldContinue: true };
 			}
 
 			case "copy":
 				yield* copyCommand(command);
-				return [false, undefined, undefined] as [
-					boolean,
-					string | undefined,
-					ModelMessage[] | undefined,
-				];
+				return { shouldContinue: false };
 
 			case "cancel":
 				yield* Console.log("\n❌ Cancelled.\n");
-				return [false, undefined, undefined] as [
-					boolean,
-					string | undefined,
-					ModelMessage[] | undefined,
-				];
+				return { shouldContinue: false };
 		}
 	});

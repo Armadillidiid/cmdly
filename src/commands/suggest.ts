@@ -17,13 +17,26 @@ const target = Options.choice("target", targetChoices).pipe(
 
 const prompt = Args.optional(Args.text({ name: "prompt" }));
 
-const actionChoices: Array<{ title: string; value: SuggestAction }> = [
-	{ title: "Run", value: "run" },
-	{ title: "Revise", value: "revise" },
-	{ title: "Explain", value: "explain" },
-	{ title: "Copy", value: "copy" },
-	{ title: "Cancel", value: "cancel" },
+const actionChoices = [
+	{ title: "Run", value: "run" as const },
+	{ title: "Revise", value: "revise" as const },
+	{ title: "Explain", value: "explain" as const },
+	{ title: "Copy", value: "copy" as const },
+	{ title: "Cancel", value: "cancel" as const },
 ];
+
+/**
+ * Get the last assistant message content from the message history
+ */
+const getLastCommand = (messages: ModelMessage[]): string => {
+	for (let i = messages.length - 1; i >= 0; i--) {
+		const msg = messages[i];
+		if (msg && msg.role === "assistant" && typeof msg.content === "string") {
+			return msg.content;
+		}
+	}
+	return "";
+};
 
 const suggestCommand = Command.make(
 	"suggest",
@@ -59,42 +72,44 @@ const suggestCommand = Command.make(
 			const config = yield* configService.config();
 			const defaultAction = config?.defaultSuggestAction;
 
-			yield* Effect.iterate(
-				{
-					command: initialCommand,
-					messages: [
-						...initialMessages,
-						{ role: "assistant", content: initialCommand },
-					] satisfies ModelMessage[],
-					shouldContinue: true,
-				},
-				{
-					while: (state) => state.shouldContinue,
-					body: (state) =>
-						Effect.gen(function* () {
-							const action: SuggestAction = defaultAction
-								? defaultAction
-								: yield* Prompt.select({
-										message: "What would you like to do?",
-										choices: actionChoices,
-									});
+			const initialState: {
+				messages: ModelMessage[];
+				shouldContinue: boolean;
+			} = {
+				messages: [
+					...initialMessages,
+					{ role: "assistant", content: initialCommand },
+				],
+				shouldContinue: true,
+			};
 
-							const [continueLoop, newCommand, newMessages] =
-								yield* handleAction(
-									action,
-									state.command,
-									state.messages,
-									target,
-								);
+			yield* Effect.iterate(initialState, {
+				while: (state) => state.shouldContinue,
+				body: (state) =>
+					Effect.gen(function* () {
+						const action: SuggestAction = defaultAction
+							? defaultAction
+							: yield* Prompt.select({
+									message: "What would you like to do?",
+									choices: actionChoices,
+								});
 
-							return {
-								command: newCommand ?? state.command,
-								messages: newMessages ?? state.messages,
-								shouldContinue: continueLoop,
-							};
-						}),
-				},
-			);
+						const result = yield* handleAction(
+							action,
+							getLastCommand(state.messages),
+							state.messages,
+							target,
+						);
+
+						const newMessages: ModelMessage[] =
+							result.messages ?? state.messages;
+
+						return {
+							messages: newMessages,
+							shouldContinue: result.shouldContinue,
+						};
+					}),
+			});
 		}).pipe(Effect.provide(programLayer)),
 );
 
