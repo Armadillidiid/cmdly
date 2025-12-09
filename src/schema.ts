@@ -2,11 +2,22 @@ import { Schema } from "effect";
 import { SUPPORTED_PROVIDER_IDS } from "./constants.js";
 import { Provider } from "./lib/providers.js";
 
+const suggestActionSchema = Schema.Literal(
+	"run",
+	"revise",
+	"explain",
+	"copy",
+	"cancel",
+);
+
 export const configSchema = Schema.Struct({
 	model: Schema.String,
 	provider: Schema.String,
+	defaultSuggestAction: Schema.optional(suggestActionSchema),
 });
+
 export type Config = typeof configSchema.Type;
+export type SuggestAction = typeof suggestActionSchema.Type;
 
 const credentialsFields = Object.fromEntries(
 	SUPPORTED_PROVIDER_IDS.map((id) => [id, Schema.optional(Schema.String)]),
