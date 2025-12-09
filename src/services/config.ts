@@ -6,7 +6,8 @@ import {
 	DEFAULT_CONFIG,
 } from "@/constants.js";
 import { ConfigError } from "@/lib/errors.js";
-import { type Config, configSchema } from "@/schema.js";
+import { configSchema } from "@/schema.js";
+import { type Config } from "@/types.js";
 import {
 	ensureDirectory,
 	expandHome,

@@ -1,7 +1,7 @@
 import { Prompt } from "@effect/cli";
 import { Console, Effect } from "effect";
 import { AiService } from "@/services/ai.js";
-import type { SuggestAction } from "@/schema.js";
+import type { SuggestAction } from "@/types.js";
 import { spawn } from "node:child_process";
 
 /**

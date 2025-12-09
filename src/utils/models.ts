@@ -14,9 +14,6 @@ import {
 	readJsonFile,
 	writeJsonFile,
 } from "@/utils/files.js";
-import { SUPPORTED_PROVIDER_IDS } from "@/constants.js";
-
-export type ProviderId = (typeof SUPPORTED_PROVIDER_IDS)[number];
 
 /**
  * Get the path to the models cache file

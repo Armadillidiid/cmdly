@@ -2,7 +2,7 @@ import { Command, Prompt } from "@effect/cli";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { Console, Effect, Layer, Redacted } from "effect";
 import { NAME } from "@/constants.js";
-import type { Credentials } from "@/schema.js";
+import type { Credentials } from "@/types.js";
 import { ConfigService } from "@/services/config.js";
 import { CredentialsService } from "@/services/credentials.js";
 import { fetchProviderModels, fetchAndCacheModels } from "@/utils/models.js";

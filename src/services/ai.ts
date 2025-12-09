@@ -2,7 +2,7 @@ import { generateText } from "ai";
 import { Data, Effect } from "effect";
 import { explainPrompt, suggestPrompt } from "@/lib/prompts.js";
 import { getProvider, type Provider } from "@/lib/providers.js";
-import type { Credentials } from "@/schema.js";
+import type { Credentials } from "@/types.js";
 import { ConfigService } from "./config.js";
 import { CredentialsService } from "./credentials.js";
 

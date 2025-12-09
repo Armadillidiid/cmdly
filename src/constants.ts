@@ -1,4 +1,4 @@
-import type { Config } from "./schema.js";
+import type { Config } from "./types.js";
 
 declare const __VERSION__: string;
 declare const __NAME__: string;

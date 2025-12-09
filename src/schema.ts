@@ -2,7 +2,7 @@ import { Schema } from "effect";
 import { SUPPORTED_PROVIDER_IDS } from "./constants.js";
 import { Provider } from "./lib/providers.js";
 
-const suggestActionSchema = Schema.Literal(
+export const suggestActionSchema = Schema.Literal(
 	"run",
 	"revise",
 	"explain",
@@ -16,9 +16,6 @@ export const configSchema = Schema.Struct({
 	defaultSuggestAction: Schema.optional(suggestActionSchema),
 });
 
-export type Config = typeof configSchema.Type;
-export type SuggestAction = typeof suggestActionSchema.Type;
-
 const credentialsFields = Object.fromEntries(
 	SUPPORTED_PROVIDER_IDS.map((id) => [id, Schema.optional(Schema.String)]),
 ) as Record<Provider, Schema.optional<typeof Schema.String>>;
@@ -27,8 +24,6 @@ export const credentialsSchema = Schema.Struct({
 	token: Schema.optional(Schema.String),
 	...credentialsFields,
 });
-export type Credentials = typeof credentialsSchema.Type;
-
 // Models.dev API schemas
 export const modelCostSchema = Schema.Struct({
 	input: Schema.optional(Schema.Number),
@@ -70,8 +65,6 @@ export const modelInfoSchema = Schema.Struct({
 	modalities: modelModalitiesSchema,
 	status: Schema.optional(modelStatusSchema),
 });
-export type ModelInfo = typeof modelInfoSchema.Type;
-
 export const providerInfoSchema = Schema.Struct({
 	id: Schema.String,
 	name: Schema.String,
@@ -81,10 +74,8 @@ export const providerInfoSchema = Schema.Struct({
 	api: Schema.optional(Schema.String),
 	models: Schema.Record({ key: Schema.String, value: modelInfoSchema }),
 });
-export type ProviderInfo = typeof providerInfoSchema.Type;
-
 export const modelsDevResponseSchema = Schema.Record({
 	key: Schema.String,
 	value: providerInfoSchema,
 });
-export type ModelsDevResponse = typeof modelsDevResponseSchema.Type;
+
