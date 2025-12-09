@@ -19,7 +19,7 @@ const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 /**
  * Get the path to the models cache file
  */
-const getModelsCachePath = (): Effect.Effect<string, never, Path.Path> =>
+const getModelsCachePath = () =>
   Effect.gen(function* () {
     const path = yield* Path.Path;
     const stateDir = yield* expandHome(STATE_DIRECTORY);
@@ -29,9 +29,7 @@ const getModelsCachePath = (): Effect.Effect<string, never, Path.Path> =>
 /**
  * Check if the cache is stale based on file modification time
  */
-const isCacheStale = (
-  filePath: string,
-): Effect.Effect<boolean, PlatformError, FileSystem.FileSystem> =>
+const isCacheStale = (filePath: string) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const info = yield* fs.stat(filePath);
@@ -51,13 +49,7 @@ const isCacheStale = (
  * @param force - Force refresh even if cache is fresh
  * @returns Effect containing the complete ModelsDevResponse
  */
-export const fetchAndCacheModels = (
-  force = false,
-): Effect.Effect<
-  ModelsDevResponse,
-  ModelsFetchError | PlatformError | FileSystemError,
-  FileSystem.FileSystem | Path.Path
-> =>
+export const fetchAndCacheModels = (force = false) =>
   Effect.gen(function* () {
     const cachePath = yield* getModelsCachePath();
     const exists = yield* fileExists(cachePath);
@@ -68,11 +60,12 @@ export const fetchAndCacheModels = (
       if (!stale) {
         // Cache is fresh, read from it
         return yield* readJsonFile(cachePath, modelsDevResponseSchema).pipe(
-          Effect.mapError((error) =>
-            new ModelsFetchError({
-              message: "Failed to read cached models",
-              cause: error,
-            }),
+          Effect.mapError(
+            (error) =>
+              new ModelsFetchError({
+                message: "Failed to read cached models",
+                cause: error,
+              }),
           ),
         );
       }
@@ -118,25 +111,18 @@ export const fetchAndCacheModels = (
  * @param providerId - The provider ID (e.g., "openai", "anthropic", "google")
  * @returns Effect containing an array of ModelInfo objects
  */
-export const fetchProviderModels = (
-  providerId: string,
-): Effect.Effect<
-  readonly ModelInfo[],
-  ModelsFetchError | PlatformError | FileSystemError,
-  FileSystem.FileSystem | Path.Path
-> =>
+export const fetchProviderModels = (providerId: string) =>
   Effect.gen(function* () {
     // Ensure we have cached data (will fetch if needed)
     const data = yield* fetchAndCacheModels();
 
-    // Find and return models for the specific provider
-    const provider = data.providers.find((p) => p.id === providerId);
+    // The data is a record with provider IDs as keys
+    const provider = data[providerId];
 
     if (!provider) {
       return [];
     }
 
-    return provider.models;
+    // Convert the models Record to an array
+    return Object.values(provider.models);
   });
-
-
