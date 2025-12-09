@@ -1,10 +1,7 @@
-import { Prompt } from "@effect/cli";
 import { Console, Effect } from "effect";
-import type { ModelMessage } from "ai";
 import { AiService } from "@/services/ai.js";
 import type { SuggestAction } from "@/types.js";
 import { spawn } from "node:child_process";
-import { reviseCommand } from "@/utils/revise.js";
 
 /**
  * Execute a shell command
@@ -82,23 +79,15 @@ export const copyCommand = (command: string) =>
 		}
 	});
 
-/**
- * Handle the selected action for a suggested command
- */
 export const handleAction = (
-	action: SuggestAction,
+	action: Exclude<SuggestAction, "revise">,
 	command: string,
-	messages: ModelMessage[],
-	target: string,
 ) =>
 	Effect.gen(function* () {
 		switch (action) {
 			case "run":
 				yield* runCommand(command);
 				return { shouldContinue: false };
-
-			case "revise":
-				return yield* reviseCommand(command, messages, target);
 
 			case "explain": {
 				const ai = yield* AiService;

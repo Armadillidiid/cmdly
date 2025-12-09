@@ -25,19 +25,6 @@ const actionChoices = [
 	{ title: "Cancel", value: "cancel" as const },
 ];
 
-/**
- * Get the last assistant message content from the message history
- */
-const getLastCommand = (messages: ModelMessage[]): string => {
-	for (let i = messages.length - 1; i >= 0; i--) {
-		const msg = messages[i];
-		if (msg && msg.role === "assistant" && typeof msg.content === "string") {
-			return msg.content;
-		}
-	}
-	return "";
-};
-
 const suggestCommand = Command.make(
 	"suggest",
 	{
@@ -50,12 +37,7 @@ const suggestCommand = Command.make(
 				onNone: () =>
 					Prompt.text({
 						message: `What ${target} command would you like?`,
-						validate: (input) => {
-							if (!input || input.trim().length === 0) {
-								return Effect.fail("Prompt cannot be empty");
-							}
-							return Effect.succeed(input);
-						},
+						validate: validateNonEmpty,
 					}),
 				onSome: (p) => Effect.succeed(p),
 			});
@@ -64,8 +46,11 @@ const suggestCommand = Command.make(
 			const initialMessages: ModelMessage[] = [
 				{ role: "user", content: userPrompt },
 			];
-			const initialCommand = yield* ai.suggest(target, initialMessages);
-			yield* Console.log(`\n${initialCommand}\n`);
+			const initialCommand = yield* getSuggestAndLog(
+				ai,
+				target,
+				initialMessages,
+			);
 
 			// Get default action from config
 			const configService = yield* ConfigService;
@@ -94,23 +79,73 @@ const suggestCommand = Command.make(
 									choices: actionChoices,
 								});
 
+						// Handle revision inline as it's part of the conversation loop
+						if (action === "revise") {
+							const revision = yield* Prompt.text({
+								message: "How would you like to revise the command?",
+								validate: validateNonEmpty,
+							});
+
+							const newMessages: ModelMessage[] = [
+								...state.messages,
+								{ role: "user", content: revision },
+							];
+							const revisedCommand = yield* getSuggestAndLog(
+								ai,
+								target,
+								newMessages,
+							);
+
+							return {
+								messages: [
+									...state.messages,
+									{ role: "user", content: revision },
+									{ role: "assistant", content: revisedCommand },
+								],
+								shouldContinue: true,
+							};
+						}
+
 						const result = yield* handleAction(
 							action,
 							getLastCommand(state.messages),
-							state.messages,
-							target,
 						);
 
-						const newMessages: ModelMessage[] =
-							result.messages ?? state.messages;
-
 						return {
-							messages: newMessages,
+							messages: state.messages,
 							shouldContinue: result.shouldContinue,
 						};
 					}),
 			});
 		}).pipe(Effect.provide(programLayer)),
 );
+
+const validateNonEmpty = (input: string) => {
+	if (!input || input.trim().length === 0) {
+		return Effect.fail("Prompt cannot be empty");
+	}
+	return Effect.succeed(input);
+};
+
+const getSuggestAndLog = (
+	ai: AiService,
+	target: string,
+	messages: ModelMessage[],
+) =>
+	Effect.gen(function* () {
+		const command = yield* ai.suggest(target, messages);
+		yield* Console.log(`\n${command}\n`);
+		return command;
+	});
+
+const getLastCommand = (messages: ModelMessage[]): string => {
+	for (let i = messages.length - 1; i >= 0; i--) {
+		const msg = messages[i];
+		if (msg && msg.role === "assistant" && typeof msg.content === "string") {
+			return msg.content;
+		}
+	}
+	return "";
+};
 
 export { suggestCommand };
