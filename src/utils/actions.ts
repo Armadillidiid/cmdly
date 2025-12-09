@@ -1,5 +1,6 @@
 import { Prompt } from "@effect/cli";
 import { Console, Effect } from "effect";
+import type { ModelMessage } from "ai";
 import { AiService } from "@/services/ai.js";
 import type { SuggestAction } from "@/types.js";
 import { spawn } from "node:child_process";
@@ -82,19 +83,23 @@ export const copyCommand = (command: string) =>
 
 /**
  * Handle the selected action for a suggested command
- * Returns [shouldContinue, newCommand?]
+ * Returns [shouldContinue, newCommand?, newMessages?]
  */
 export const handleAction = (
 	action: SuggestAction,
 	command: string,
+	messages: ModelMessage[],
 	target: string,
-	originalPrompt: string,
 ) =>
 	Effect.gen(function* () {
 		switch (action) {
 			case "run":
 				yield* runCommand(command);
-				return [false, undefined] as [boolean, string | undefined];
+				return [false, undefined, undefined] as [
+					boolean,
+					string | undefined,
+					ModelMessage[] | undefined,
+				];
 
 			case "revise": {
 				const revision = yield* Prompt.text({
@@ -108,27 +113,45 @@ export const handleAction = (
 				});
 
 				const ai = yield* AiService;
-				const revisedCommand = yield* ai.suggest(
-					target,
-					`${originalPrompt}. ${revision}. Previous command was: ${command}`,
-				);
+				const newMessages: ModelMessage[] = [
+					...messages,
+					{ role: "user", content: revision },
+				];
+				const revisedCommand = yield* ai.suggest(target, newMessages);
 				yield* Console.log(`\n${revisedCommand}\n`);
-				return [true, revisedCommand] as [boolean, string | undefined];
+
+				return [
+					true,
+					revisedCommand,
+					[...newMessages, { role: "assistant", content: revisedCommand }],
+				] as [boolean, string | undefined, ModelMessage[] | undefined];
 			}
 
 			case "explain": {
 				const ai = yield* AiService;
 				const explanation = yield* ai.explain(command);
 				yield* Console.log(`\n${explanation}\n`);
-				return [true, undefined] as [boolean, string | undefined];
+				return [true, undefined, undefined] as [
+					boolean,
+					string | undefined,
+					ModelMessage[] | undefined,
+				];
 			}
 
 			case "copy":
 				yield* copyCommand(command);
-				return [false, undefined] as [boolean, string | undefined];
+				return [false, undefined, undefined] as [
+					boolean,
+					string | undefined,
+					ModelMessage[] | undefined,
+				];
 
 			case "cancel":
 				yield* Console.log("\n❌ Cancelled.\n");
-				return [false, undefined] as [boolean, string | undefined];
+				return [false, undefined, undefined] as [
+					boolean,
+					string | undefined,
+					ModelMessage[] | undefined,
+				];
 		}
 	});

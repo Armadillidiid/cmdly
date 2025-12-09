@@ -1,5 +1,6 @@
 import { Args, Command, Options, Prompt } from "@effect/cli";
 import { Console, Effect, Layer, Option } from "effect";
+import type { ModelMessage } from "ai";
 import { AiService } from "@/services/ai.js";
 import { ConfigService } from "@/services/config.js";
 import type { SuggestAction } from "@/types.js";
@@ -46,38 +47,49 @@ const suggestCommand = Command.make(
 				onSome: (p) => Effect.succeed(p),
 			});
 
-		const ai = yield* AiService;
-		const initialCommand = yield* ai.suggest(target, userPrompt);
-		yield* Console.log(`\n${initialCommand}\n`);
+			const ai = yield* AiService;
+			const initialMessages: ModelMessage[] = [
+				{ role: "user", content: userPrompt },
+			];
+			const initialCommand = yield* ai.suggest(target, initialMessages);
+			yield* Console.log(`\n${initialCommand}\n`);
 
-		// Get default action from config
-		const configService = yield* ConfigService;
-		const config = yield* configService.config();
-      const defaultAction = config?.defaultSuggestAction;
+			// Get default action from config
+			const configService = yield* ConfigService;
+			const config = yield* configService.config();
+			const defaultAction = config?.defaultSuggestAction;
 
+			yield* Effect.iterate(
+				{
+					command: initialCommand,
+					messages: [
+						...initialMessages,
+						{ role: "assistant", content: initialCommand },
+					] satisfies ModelMessage[],
+					shouldContinue: true,
+				},
+				{
+					while: (state) => state.shouldContinue,
+					body: (state) =>
+						Effect.gen(function* () {
+							const action: SuggestAction = defaultAction
+								? defaultAction
+								: yield* Prompt.select({
+										message: "What would you like to do?",
+										choices: actionChoices,
+									});
 
-		yield* Effect.iterate(
-			{ command: initialCommand, shouldContinue: true },
-			{
-				while: (state) => state.shouldContinue,
-				body: (state) =>
-					Effect.gen(function* () {
-						const action: SuggestAction = defaultAction
-							? defaultAction
-							: yield* Prompt.select({
-									message: "What would you like to do?",
-									choices: actionChoices,
-								});
-
-						const [continueLoop, newCommand] = yield* handleAction(
-							action,
-							state.command,
-							target,
-							userPrompt,
-						);
+							const [continueLoop, newCommand, newMessages] =
+								yield* handleAction(
+									action,
+									state.command,
+									state.messages,
+									target,
+								);
 
 							return {
 								command: newCommand ?? state.command,
+								messages: newMessages ?? state.messages,
 								shouldContinue: continueLoop,
 							};
 						}),

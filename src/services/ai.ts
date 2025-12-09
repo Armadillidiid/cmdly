@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { generateText, type ModelMessage } from "ai";
 import { Data, Effect } from "effect";
 import { explainPrompt, suggestPrompt } from "@/lib/prompts.js";
 import { getProvider, type Provider } from "@/lib/providers.js";
@@ -41,14 +41,14 @@ const aiService = Effect.gen(function* () {
 		messages: [],
 	};
 
-	const suggest = (target: string, prompt: string) =>
+	const suggest = (target: string, messages: ModelMessage[]) =>
 		Effect.gen(function* () {
 			const res = yield* Effect.tryPromise({
 				try: () =>
 					generateText({
 						...defaultOpts,
 						system: suggestPrompt(target),
-						messages: [{ role: "user", content: prompt }],
+						messages,
 					}),
 				catch: (err) =>
 					new AiServiceError({
