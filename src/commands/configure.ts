@@ -7,7 +7,6 @@ import { ConfigService } from "@/services/config.js";
 import { CredentialsService } from "@/services/credentials.js";
 import { fetchProviderModels, fetchAndCacheModels } from "@/utils/models.js";
 import { SUPPORTED_PROVIDER_IDS } from "@/constants.js";
-import { type ProviderId } from "@/utils/models.js";
 
 const configureCommand = Command.make("configure", {}, () =>
 	Effect.gen(function* () {
@@ -15,12 +14,13 @@ const configureCommand = Command.make("configure", {}, () =>
 			"This wizard will help you set up your AI provider credentials and preferences.\n",
 		);
 
-		// Fetch models data to get provider names
-		const modelsData = yield* fetchAndCacheModels()
+		const modelsData = yield* fetchAndCacheModels();
 		const providerChoices = SUPPORTED_PROVIDER_IDS.map((id) => ({
 			title: modelsData[id]?.name || id,
 			value: id,
 		}));
+		const credentialsService = yield* CredentialsService;
+		const currentCredentials = yield* credentialsService.getCredentials();
 
 		// Step 1: Select provider
 		const provider = yield* Prompt.select({
@@ -28,7 +28,16 @@ const configureCommand = Command.make("configure", {}, () =>
 			choices: providerChoices,
 		});
 
+		// Get existing API key for this provider if it exists
+		const existingApiKey = currentCredentials[provider];
+
 		// Step 2: Get API key
+		if (existingApiKey) {
+			yield* Console.log(
+				`\n💡 Existing API key found. Press Enter to keep it, or enter a new one.\n`,
+			);
+		}
+
 		const apiKey = yield* Prompt.password({
 			message: `Enter your ${providerChoices.find((p) => p.value === provider)?.title} API key:`,
 			validate: (input) => {
@@ -37,6 +46,7 @@ const configureCommand = Command.make("configure", {}, () =>
 				}
 				return Effect.succeed(input);
 			},
+			default: existingApiKey || "",
 		});
 
 		// Step 3: Fetch available models for the provider
@@ -82,9 +92,6 @@ const configureCommand = Command.make("configure", {}, () =>
 		}
 
 		// Step 6: Save credentials
-		const credentialsService = yield* CredentialsService;
-		const currentCredentials = yield* credentialsService.getCredentials();
-
 		const updatedCredentials: Credentials = {
 			...currentCredentials,
 			[provider]: Redacted.value(apiKey),

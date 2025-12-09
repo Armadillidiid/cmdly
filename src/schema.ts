@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { SUPPORTED_PROVIDER_IDS } from "./constants.js";
+import { Provider } from "./lib/providers.js";
 
 export const configSchema = Schema.Struct({
 	model: Schema.String,
@@ -9,7 +10,7 @@ export type Config = typeof configSchema.Type;
 
 const credentialsFields = Object.fromEntries(
 	SUPPORTED_PROVIDER_IDS.map((id) => [id, Schema.optional(Schema.String)]),
-);
+) as Record<Provider, Schema.optional<typeof Schema.String>>;
 
 export const credentialsSchema = Schema.Struct({
 	token: Schema.optional(Schema.String),
