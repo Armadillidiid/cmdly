@@ -37,3 +37,8 @@ export class ModelsFetchError extends TaggedError("ModelsFetchError")<{
 	readonly message: string;
 	readonly cause?: unknown;
 }> {}
+
+export class ActionError extends TaggedError("ActionError")<{
+	readonly message: string;
+	readonly cause?: unknown;
+}> {}

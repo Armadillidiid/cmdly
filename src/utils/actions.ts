@@ -2,6 +2,7 @@ import { Console, Effect } from "effect";
 import { AiService } from "@/services/ai.js";
 import type { SuggestAction } from "@/types.js";
 import { spawn } from "node:child_process";
+import { ActionError } from "@/lib/errors.js";
 
 /**
  * Execute a shell command
@@ -22,14 +23,31 @@ export const runCommand = (command: string) =>
 						if (code === 0) {
 							resolve();
 						} else {
-							reject(new Error(`Command failed with code ${code}`));
+							reject(
+								new ActionError({
+									message: `Command failed with exit code ${code}`,
+								}),
+							);
 						}
 					});
 
-					shell.on("error", reject);
+					shell.on("error", (err) =>
+						reject(
+							new ActionError({
+								message: "Failed to execute command",
+								cause: err,
+							}),
+						),
+					);
 				}),
 			catch: (err) => {
-				return new Error(`Failed to execute command: ${err}`);
+				if (err instanceof ActionError) {
+					return err;
+				}
+				return new ActionError({
+					message: "Failed to execute command",
+					cause: err,
+				});
 			},
 		});
 	});
@@ -60,7 +78,10 @@ export const copyCommand = (command: string) =>
 						proc.on("error", () => resolve(false));
 					}),
 				catch: (err) => {
-					return new Error(`Failed to execute command: ${err}`);
+					return new ActionError({
+						message: "Failed to copy to clipboard",
+						cause: err,
+					});
 				},
 			});
 

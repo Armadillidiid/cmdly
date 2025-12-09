@@ -75,10 +75,11 @@ export const fetchAndCacheModels = (force = false) =>
 			try: () =>
 				fetch("https://models.dev/api.json").then((r) => {
 					if (!r.ok) {
-						throw new Error(
-							`Failed to fetch models: ${r.status} ${r.statusText}`,
-						);
+						throw new ModelsFetchError({
+							message: `Failed to fetch models: ${r.status} ${r.statusText}`,
+						});
 					}
+
 					return r.json();
 				}),
 			catch: (error) =>
