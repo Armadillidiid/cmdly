@@ -14,13 +14,34 @@ const configureCommand = Command.make("configure", {}, () =>
 			"This wizard will help you set up your AI provider credentials and preferences.\n",
 		);
 
+		// Load existing config and credentials to use as defaults
+		const configService = yield* ConfigService;
+		const currentConfig = yield* configService.config();
+		const credentialsService = yield* CredentialsService;
+		const currentCredentials = yield* credentialsService.getCredentials();
+
 		const modelsData = yield* fetchAndCacheModels();
-		const providerChoices = SUPPORTED_PROVIDER_IDS.map((id) => ({
+		let providerChoices = SUPPORTED_PROVIDER_IDS.map((id) => ({
 			title: modelsData[id]?.name || id,
 			value: id,
 		}));
-		const credentialsService = yield* CredentialsService;
-		const currentCredentials = yield* credentialsService.getCredentials();
+
+		// Reorder choices to put current provider first if it exists
+		if (currentConfig?.provider) {
+			const currentProviderIndex = providerChoices.findIndex(
+				(p) => p.value === currentConfig.provider,
+			);
+			if (currentProviderIndex > 0) {
+				const currentProvider = providerChoices[currentProviderIndex];
+				if (currentProvider) {
+					providerChoices = [
+						currentProvider,
+						...providerChoices.slice(0, currentProviderIndex),
+						...providerChoices.slice(currentProviderIndex + 1),
+					];
+				}
+			}
+		}
 
 		// Step 1: Select provider
 		const provider = yield* Prompt.select({
@@ -56,7 +77,7 @@ const configureCommand = Command.make("configure", {}, () =>
 			Effect.catchAll((error) => {
 				// If fetching models fails, continue without model selection
 				return Effect.gen(function* () {
-					yield* Console.error(`⚠️  Failed to fetch models: ${error.message}`);
+					yield* Console.error(`!  Failed to fetch models: ${error.message}`);
 					yield* Console.log(
 						"Continuing with configuration. You can set the default model manually later.\n",
 					);
@@ -69,10 +90,27 @@ const configureCommand = Command.make("configure", {}, () =>
 
 		if (models.length > 0) {
 			// Step 4: Select default model
-			const modelChoices = models.map((model) => ({
+			let modelChoices = models.map((model) => ({
 				title: `${model.name} (${model.id})`,
 				value: model.id,
 			}));
+
+			// Reorder choices to put current model first if it exists and provider matches
+			if (currentConfig?.model && currentConfig.provider === provider) {
+				const currentModelIndex = modelChoices.findIndex(
+					(m) => m.value === currentConfig.model,
+				);
+				if (currentModelIndex > 0) {
+					const currentModel = modelChoices[currentModelIndex];
+					if (currentModel) {
+						modelChoices = [
+							currentModel,
+							...modelChoices.slice(0, currentModelIndex),
+							...modelChoices.slice(currentModelIndex + 1),
+						];
+					}
+				}
+			}
 
 			selectedModel = yield* Prompt.select({
 				message: "Select your default model:",
@@ -101,8 +139,6 @@ const configureCommand = Command.make("configure", {}, () =>
 
 		// Step 7: Save config (if model was selected)
 		if (selectedModel) {
-			const configService = yield* ConfigService;
-
 			const updatedConfig = {
 				model: selectedModel,
 				provider: provider,
@@ -110,7 +146,7 @@ const configureCommand = Command.make("configure", {}, () =>
 
 			yield* configService.saveConfig(updatedConfig);
 			yield* Console.log(
-				`\nℹ️  Default model set to: ${selectedModel} (provider: ${provider})`,
+				`\ni  Default model set to: ${selectedModel} (provider: ${provider})`,
 			);
 		}
 
