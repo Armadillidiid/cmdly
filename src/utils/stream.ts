@@ -23,7 +23,6 @@ export const displayStream = <R>(
 					// Count newlines to track how many lines we've written
 					linesWritten += (chunk.match(/\n/g) || []).length;
 					// Display chunk immediately for real-time feedback
-					// @ts-expect-error - process is available in Node.js runtime
 					globalThis.process.stdout.write(chunk);
 				}
 

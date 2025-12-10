@@ -1,30 +1,18 @@
 #!/usr/bin/env node
 
-import {
-	NodeContext,
-	NodeFileSystem,
-	NodePath,
-	NodeTerminal,
-} from "@effect/platform-node";
-import { Console, Effect, Layer } from "effect";
+import { NodeContext, NodeRuntime, NodeTerminal } from "@effect/platform-node";
+import { Cause, Console, Effect, Exit, Layer } from "effect";
 import { CliService } from "./cli.js";
-import { ConfigService } from "./services/config.js";
-import { CredentialsService } from "./services/credentials.js";
 import { GitHubOAuthService } from "./services/github-oauth.js";
 
 const layers = Layer.mergeAll(
 	NodeContext.layer,
 	NodeTerminal.layer,
-	NodeFileSystem.layer,
-	NodePath.layer,
-	// Services
-	CliService.Default,
 	GitHubOAuthService.Default,
-	CredentialsService.Default,
-	ConfigService.Default,
+	CliService.Default,
 );
 
-const _x = Effect.gen(function* () {
+Effect.gen(function* () {
 	const cli = yield* CliService;
 	yield* cli.run(process.argv);
 }).pipe(
@@ -54,13 +42,13 @@ const _x = Effect.gen(function* () {
 			Console.error(`\nGitHub OAuth error: ${error.message}\n`),
 	}),
 	Effect.provide(layers),
-	// NodeRuntime.runMain({
-	// 	teardown: (exit) => {
-	// 		// Force exit: copy-paste library spawns child processes (pbcopy/xclip/clip),
-	// 		// which keeps Node's event loop alive even after the command completes successfully
-	// 		const code =
-	// 			Exit.isFailure(exit) && !Cause.isInterruptedOnly(exit.cause) ? 1 : 0;
-	// 		process.exit(code);
-	// 	},
-	// }),
+	NodeRuntime.runMain({
+		teardown: (exit) => {
+			// Force exit: copy-paste library spawns child processes (pbcopy/xclip/clip),
+			// which keeps Node's event loop alive even after the command completes successfully
+			const code =
+				Exit.isFailure(exit) && !Cause.isInterruptedOnly(exit.cause) ? 1 : 0;
+			process.exit(code);
+		},
+	}),
 );
