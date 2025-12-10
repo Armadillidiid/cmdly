@@ -5,8 +5,8 @@ import { AiService } from "@/services/ai.js";
 import { ConfigService } from "@/services/config.js";
 import { CredentialsService } from "@/services/credentials.js";
 import { GitHubOAuthService } from "@/services/github-oauth.js";
-import { displayStream } from "@/utils/stream.js";
 import { highlightMarkdown } from "@/utils/highlight.js";
+import { displayStream } from "@/utils/stream.js";
 
 const programLayer = Layer.mergeAll(
 	GitHubOAuthService.Default,
@@ -40,16 +40,16 @@ const explainCommand = Command.make(
 				onSome: (cmd) => Effect.succeed(cmd),
 			});
 
-		const ai = yield* AiService;
-		yield* Console.log(""); // Print newline before streaming
-		
-		// Get the stream from AI service
-		const stream = yield* ai.explain(userCommand);
-		
-		// Display the stream with highlighting
-		yield* displayStream(stream, highlightMarkdown);
-		
-		yield* Console.log(""); // Print newline after streaming
+			const ai = yield* AiService;
+			yield* Console.log(""); // Print newline before streaming
+
+			// Get the stream from AI service
+			const stream = yield* ai.explain(userCommand);
+
+			// Display the stream with highlighting
+			yield* displayStream(stream, highlightMarkdown);
+
+			yield* Console.log(""); // Print newline after streaming
 		}).pipe(Effect.provide(programLayer)),
 );
 

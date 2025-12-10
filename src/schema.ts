@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { BundledTheme, bundledThemesInfo } from "shiki";
+import { type BundledTheme, bundledThemesInfo } from "shiki";
 import { SUGGEST_ACTIONS, SUPPORTED_PROVIDER_IDS } from "./constants.js";
 
 export const suggestActionSchema = Schema.Literal(

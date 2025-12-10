@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { CREDENTIALS_FILENAME, STATE_DIRECTORY } from "@/constants.js";
 import { CredentialsError } from "@/lib/errors.js";
 import { credentialsSchema } from "@/schema.js";
-import type { CredentialValue, CredentialsRecord } from "@/types.js";
+import type { CredentialsRecord, CredentialValue } from "@/types.js";
 import {
 	ensureDirectory,
 	expandHome,
@@ -156,7 +156,7 @@ const credentialsService = Effect.succeed({
 	) => setCredential(provider, credential),
 	saveCredentials: (newCredentials: CredentialsRecord) =>
 		saveCredentials(newCredentials),
-})
+});
 
 export class CredentialsService extends Effect.Service<CredentialsService>()(
 	"CredentialsService",

@@ -1,5 +1,5 @@
-import { Effect, Exit, Fiber, Schedule } from "effect";
 import { Terminal } from "@effect/platform";
+import { Effect, Exit, Fiber, Schedule } from "effect";
 
 /**
  * Runs an Effect task with a terminal spinner.

@@ -1,7 +1,7 @@
 import { Command, Prompt } from "@effect/cli";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { Console, Effect, Layer, Redacted } from "effect";
-import { bundledThemesInfo, type BundledTheme } from "shiki";
+import { type BundledTheme, bundledThemesInfo } from "shiki";
 import { SUGGEST_ACTION_CHOICES, SUPPORTED_PROVIDER_IDS } from "@/constants.js";
 import { ConfigService } from "@/services/config.js";
 import { CredentialsService } from "@/services/credentials.js";

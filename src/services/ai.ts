@@ -1,4 +1,4 @@
-import { streamText, type ModelMessage } from "ai";
+import { type ModelMessage, streamText } from "ai";
 import { Data, Effect } from "effect";
 import { explainPrompt, suggestPrompt } from "@/lib/prompts.js";
 import { getProvider, type Provider } from "@/lib/providers.js";

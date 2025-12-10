@@ -4,10 +4,9 @@ import {
 	NodeContext,
 	NodeFileSystem,
 	NodePath,
-	NodeRuntime,
 	NodeTerminal,
 } from "@effect/platform-node";
-import { Cause, Console, Effect, Exit, Layer } from "effect";
+import { Console, Effect, Layer } from "effect";
 import { CliService } from "./cli.js";
 import { ConfigService } from "./services/config.js";
 import { CredentialsService } from "./services/credentials.js";
@@ -25,7 +24,7 @@ const layers = Layer.mergeAll(
 	ConfigService.Default,
 );
 
-const x = Effect.gen(function* () {
+const _x = Effect.gen(function* () {
 	const cli = yield* CliService;
 	yield* cli.run(process.argv);
 }).pipe(

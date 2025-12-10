@@ -2,15 +2,15 @@ import { Args, Command, Options, Prompt } from "@effect/cli";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import type { ModelMessage } from "ai";
 import { Console, Effect, Layer, Option } from "effect";
+import { SUGGEST_ACTION_CHOICES } from "@/constants.js";
 import { AiService } from "@/services/ai.js";
 import { ConfigService } from "@/services/config.js";
 import { CredentialsService } from "@/services/credentials.js";
 import { GitHubOAuthService } from "@/services/github-oauth.js";
 import type { SuggestAction } from "@/types.js";
 import { handleAction } from "@/utils/actions.js";
-import { SUGGEST_ACTION_CHOICES } from "@/constants.js";
-import { displayStream } from "@/utils/stream.js";
 import { highlightShell } from "@/utils/highlight.js";
+import { displayStream } from "@/utils/stream.js";
 
 const programLayer = Layer.mergeAll(
 	GitHubOAuthService.Default,

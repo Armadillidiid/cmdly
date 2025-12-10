@@ -318,11 +318,9 @@ const authenticateWithGitHub = Effect.gen(function* () {
 	};
 });
 
-const githubOAuthService = Effect.gen(function* () {
-	return {
-		authenticate: authenticateWithGitHub,
-		refreshToken: refreshCopilotToken,
-	};
+const githubOAuthService = Effect.succeed({
+	authenticate: authenticateWithGitHub,
+	refreshToken: refreshCopilotToken,
 });
 
 export class GitHubOAuthService extends Effect.Service<GitHubOAuthService>()(
