@@ -42,3 +42,8 @@ export class ActionError extends TaggedError("ActionError")<{
 	readonly message: string;
 	readonly cause?: unknown;
 }> {}
+
+export class StreamError extends TaggedError("StreamError")<{
+	readonly message: string;
+	readonly cause?: unknown;
+}> {}

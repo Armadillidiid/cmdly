@@ -5,8 +5,9 @@ import { AiService } from "@/services/ai.js";
 import { ConfigService } from "@/services/config.js";
 import type { SuggestAction } from "@/types.js";
 import { handleAction } from "@/utils/actions.js";
-import { highlightShell } from "@/utils/highlight.js";
 import { SUGGEST_ACTION_CHOICES } from "@/constants.js";
+import { displayStream } from "@/utils/stream.js";
+import { highlightShell } from "@/utils/highlight.js";
 
 const programLayer = Layer.mergeAll(AiService.Default, ConfigService.Default);
 
@@ -127,9 +128,17 @@ const getSuggestAndLog = (
 	messages: ModelMessage[],
 ) =>
 	Effect.gen(function* () {
-		const command = yield* ai.suggest(target, messages);
-		const highlighted = yield* highlightShell(command);
-		yield* Console.log(`\n${highlighted}`);
+		// Print newline before streaming starts
+		yield* Console.log("");
+		
+		// Get the stream from AI service
+		const stream = yield* ai.suggest(target, messages);
+		
+		// Display the stream with highlighting
+		const command = yield* displayStream(stream, highlightShell);
+		
+		// Print newline after streaming ends
+		yield* Console.log("");
 		return command;
 	});
 

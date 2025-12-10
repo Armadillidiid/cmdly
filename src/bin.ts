@@ -35,6 +35,8 @@ Effect.gen(function* () {
 		AiServiceError: (error) =>
 			Console.error(`\nAI service error: ${error.message}\n`),
 		ActionError: (error) => Console.error(`\nAction error: ${error.message}\n`),
+		StreamError: (error) =>
+			Console.error(`\nStream error: ${error.message}\n`),
 	}),
 	Effect.provide(layers),
 	NodeRuntime.runMain({

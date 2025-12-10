@@ -2,6 +2,7 @@ import { Args, Command, Prompt } from "@effect/cli";
 import { Console, Effect, Layer, Option } from "effect";
 import { AiService } from "@/services/ai.js";
 import { ConfigService } from "@/services/config.js";
+import { displayStream } from "@/utils/stream.js";
 import { highlightMarkdown } from "@/utils/highlight.js";
 
 const programLayer = Layer.mergeAll(AiService.Default, ConfigService.Default);
@@ -29,10 +30,16 @@ const explainCommand = Command.make(
 				onSome: (cmd) => Effect.succeed(cmd),
 			});
 
-			const ai = yield* AiService;
-			const explanation = yield* ai.explain(userCommand);
-			const highlighted = yield* highlightMarkdown(explanation);
-			yield* Console.log(highlighted);
+		const ai = yield* AiService;
+		yield* Console.log(""); // Print newline before streaming
+		
+		// Get the stream from AI service
+		const stream = yield* ai.explain(userCommand);
+		
+		// Display the stream with highlighting
+		yield* displayStream(stream, highlightMarkdown);
+		
+		yield* Console.log(""); // Print newline after streaming
 		}).pipe(Effect.provide(programLayer)),
 );
 

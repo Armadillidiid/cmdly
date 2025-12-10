@@ -5,6 +5,7 @@ import { ActionError } from "@/lib/errors.js";
 import { AiService } from "@/services/ai.js";
 import type { SuggestAction } from "@/types.js";
 import { highlightMarkdown } from "@/utils/highlight.js";
+import { displayStream } from "@/utils/stream.js";
 
 /**
  * Execute a shell command
@@ -82,9 +83,9 @@ export const handleAction = (
 
 			case "explain": {
 				const ai = yield* AiService;
-				const explanation = yield* ai.explain(command);
-				const highlighted = yield* highlightMarkdown(explanation);
-				yield* Console.log(`\n${highlighted}`);
+				yield* Console.log("");
+				const stream = yield* ai.explain(command);
+				yield* displayStream(stream, highlightMarkdown);
 				return { shouldContinue: false };
 			}
 

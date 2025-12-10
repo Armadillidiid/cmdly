@@ -1,4 +1,4 @@
-import { generateText, type ModelMessage } from "ai";
+import { streamText, type ModelMessage } from "ai";
 import { Data, Effect } from "effect";
 import { explainPrompt, suggestPrompt } from "@/lib/prompts.js";
 import { getProvider, type Provider } from "@/lib/providers.js";
@@ -33,7 +33,7 @@ const aiService = Effect.gen(function* () {
 
 	const provider = yield* getProvider(providerName, apiKey);
 
-	const defaultOpts: Parameters<typeof generateText>[0] & {
+	const defaultOpts: Parameters<typeof streamText>[0] & {
 		maxTokens: number;
 	} = {
 		model: provider(model),
@@ -42,39 +42,33 @@ const aiService = Effect.gen(function* () {
 	};
 
 	const suggest = (target: string, messages: ModelMessage[]) =>
-		Effect.gen(function* () {
-			const res = yield* Effect.tryPromise({
-				try: () =>
-					generateText({
-						...defaultOpts,
-						system: suggestPrompt(target),
-						messages,
-					}),
-				catch: (err) =>
-					new AiServiceError({
-						message: "AI suggestion failed",
-						cause: err,
-					}),
+		Effect.sync(() => {
+			// Start streaming - streamText returns synchronously
+			const result = streamText({
+				...defaultOpts,
+				system: suggestPrompt(target),
+				messages,
 			});
-			return res.text;
+
+			return {
+				textStream: result.textStream,
+				fullText: result.text,
+			};
 		});
 
 	const explain = (prompt: string) =>
-		Effect.gen(function* () {
-			const res = yield* Effect.tryPromise({
-				try: () =>
-					generateText({
-						...defaultOpts,
-						system: explainPrompt(),
-						messages: [{ role: "user", content: prompt }],
-					}),
-				catch: (err) =>
-					new AiServiceError({
-						message: "AI explanation failed",
-						cause: err,
-					}),
+		Effect.sync(() => {
+			// Start streaming - streamText returns synchronously
+			const result = streamText({
+				...defaultOpts,
+				system: explainPrompt(),
+				messages: [{ role: "user", content: prompt }],
 			});
-			return res.text;
+
+			return {
+				textStream: result.textStream,
+				fullText: result.text,
+			};
 		});
 
 	return {
