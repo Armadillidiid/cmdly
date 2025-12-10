@@ -102,9 +102,11 @@ YOUR EXPLANATION SHOULD INCLUDE:
 FORMAT YOUR RESPONSE AS:
 
 ## Summary
+
 [Brief overview of what the command does]
 
 ## Breakdown
+
 [Detailed explanation of each part, with indentation to show parent-child relationships between commands, subcommands, and flags]
 
 EXAMPLES:
@@ -123,9 +125,11 @@ Recursively deletes the /tmp/cache directory and all its contents without prompt
 User Command: "git log --oneline --graph --all --decorate"
 
 ## Summary
+
 Displays a compact, visual representation of the entire Git commit history across all branches with decorative references.
 
 ## Breakdown
+
 • \`git log\`: Shows the commit history
   • \`--oneline\`: Condenses each commit to a single line (short hash + message)
   • \`--graph\`: Draws ASCII art branches showing the commit graph structure
