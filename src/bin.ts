@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { NodeContext, NodeRuntime, NodeTerminal } from "@effect/platform-node";
-import { Effect, Layer, Console } from "effect";
+import { Effect, Layer, Console, Cause, Exit } from "effect";
 import { CliService } from "./cli.js";
 
 const layers = Layer.mergeAll(
@@ -34,9 +34,16 @@ Effect.gen(function* () {
 			),
 		AiServiceError: (error) =>
 			Console.error(`\nAI service error: ${error.message}\n`),
-		ActionError: (error) =>
-			Console.error(`\nAction error: ${error.message}\n`),
+		ActionError: (error) => Console.error(`\nAction error: ${error.message}\n`),
 	}),
 	Effect.provide(layers),
-	NodeRuntime.runMain(),
+	NodeRuntime.runMain({
+		teardown: (exit) => {
+			// Force exit: copy-paste library spawns child processes (pbcopy/xclip/clip),
+			// which keeps Node's event loop alive even after the command completes successfully
+			const code =
+				Exit.isFailure(exit) && !Cause.isInterruptedOnly(exit.cause) ? 1 : 0;
+			process.exit(code);
+		},
+	}),
 );
