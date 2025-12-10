@@ -40,7 +40,7 @@ export const getProvider = (providerName: Provider, apiKey?: string) =>
 						"Editor-Plugin-Version": "copilot-chat/0.32.4",
 						"Copilot-Integration-Id": "vscode-chat",
 					},
-					baseURL: "https://api.githubcopilot.com/chat/completions",
+					baseURL: "https://api.githubcopilot.com",
 				});
 			default:
 				return yield* Effect.fail(
