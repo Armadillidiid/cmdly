@@ -6,9 +6,11 @@ import { NAME, SUPPORTED_PROVIDER_IDS } from "@/constants.js";
 import { ConfigService } from "@/services/config.js";
 import { CredentialsService } from "@/services/credentials.js";
 import type { Credentials } from "@/types.js";
+import {
+	markCurrentChoice,
+	stripCurrentMarker,
+} from "@/utils/config.js";
 import { fetchAndCacheModels, fetchProviderModels } from "@/utils/models.js";
-
-// Generate theme choices from shiki's bundled themes
 
 const configureCommand = Command.make("configure", {}, () =>
 	Effect.gen(function* () {
@@ -23,32 +25,13 @@ const configureCommand = Command.make("configure", {}, () =>
 		const currentCredentials = yield* credentialsService.getCredentials();
 
 		const modelsData = yield* fetchAndCacheModels();
-		let providerChoices = SUPPORTED_PROVIDER_IDS.map((id) => ({
-			title: modelsData[id]?.name || id,
-			value: id,
-		}));
-
-		// Reorder choices to put current provider first and mark it
-		if (currentConfig?.provider) {
-			const currentProviderIndex = providerChoices.findIndex(
-				(p) => p.value === currentConfig.provider,
-			);
-			if (currentProviderIndex >= 0) {
-				const currentProvider = providerChoices[currentProviderIndex];
-				if (currentProvider) {
-					const markedProvider = {
-						...currentProvider,
-						title: `${currentProvider.title} (Current)`,
-					};
-
-					providerChoices = [
-						markedProvider,
-						...providerChoices.slice(0, currentProviderIndex),
-						...providerChoices.slice(currentProviderIndex + 1),
-					];
-				}
-			}
-		}
+		const providerChoices = markCurrentChoice(
+			SUPPORTED_PROVIDER_IDS.map((id) => ({
+				title: modelsData[id]?.name || id,
+				value: id,
+			})),
+			currentConfig?.provider,
+		);
 
 		// Step 1: Select provider
 		const provider = yield* Prompt.select({
@@ -66,8 +49,12 @@ const configureCommand = Command.make("configure", {}, () =>
 			);
 		}
 
+		const providerTitle = stripCurrentMarker(
+			providerChoices.find((p) => p.value === provider)?.title ?? provider,
+		);
+
 		const apiKey = yield* Prompt.password({
-			message: `Enter your ${providerChoices.find((p) => p.value === provider)?.title.replace(" (Current)", "")} API key:`,
+			message: `Enter your ${providerTitle} API key:`,
 			validate: (input) => {
 				if (!input || input.trim().length === 0) {
 					return Effect.fail("API key cannot be empty");
@@ -97,32 +84,14 @@ const configureCommand = Command.make("configure", {}, () =>
 
 		if (models.length > 0) {
 			// Step 4: Select default model
-			let modelChoices = models.map((model) => ({
-				title: `${model.name} (${model.id})`,
-				value: model.id,
-			}));
-
-			// Reorder choices to put current model first and mark it if provider matches
-			if (currentConfig?.model && currentConfig.provider === provider) {
-				const currentModelIndex = modelChoices.findIndex(
-					(m) => m.value === currentConfig.model,
-				);
-				if (currentModelIndex >= 0) {
-					const currentModel = modelChoices[currentModelIndex];
-					if (currentModel) {
-						const markedModel = {
-							...currentModel,
-							title: `${currentModel.title} (Current)`,
-						};
-
-						modelChoices = [
-							markedModel,
-							...modelChoices.slice(0, currentModelIndex),
-							...modelChoices.slice(currentModelIndex + 1),
-						];
-					}
-				}
-			}
+			const modelChoices = markCurrentChoice(
+				models.map((model) => ({
+					title: `${model.name} (${model.id})`,
+					value: model.id,
+				})),
+				currentConfig?.model,
+				() => currentConfig?.provider === provider,
+			);
 
 			selectedModel = yield* Prompt.select({
 				message: "Select your default model:",
@@ -131,32 +100,13 @@ const configureCommand = Command.make("configure", {}, () =>
 		}
 
 		// Step 5: Select theme
-		let themeChoices = bundledThemesInfo.map((theme) => ({
-			title: theme.displayName,
-			value: theme.id as BundledTheme,
-		}));
-
-		// Mark current theme if it exists
-		if (currentConfig?.theme) {
-			const currentThemeIndex = themeChoices.findIndex(
-				(t) => t.value === currentConfig.theme,
-			);
-			if (currentThemeIndex >= 0) {
-				const currentTheme = themeChoices[currentThemeIndex];
-				if (currentTheme) {
-					const markedTheme = {
-						...currentTheme,
-						title: `${currentTheme.title} (Current)`,
-					};
-
-					themeChoices = [
-						markedTheme,
-						...themeChoices.slice(0, currentThemeIndex),
-						...themeChoices.slice(currentThemeIndex + 1),
-					];
-				}
-			}
-		}
+		const themeChoices = markCurrentChoice(
+			bundledThemesInfo.map((theme) => ({
+				title: theme.displayName,
+				value: theme.id as BundledTheme,
+			})),
+			currentConfig?.theme,
+		);
 
 		const selectedTheme = yield* Prompt.select({
 			message: "Select your syntax highlighting theme:",
