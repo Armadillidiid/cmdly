@@ -3,7 +3,7 @@ import { Effect } from "effect";
 import { CREDENTIALS_FILENAME, STATE_DIRECTORY } from "@/constants.js";
 import { CredentialsError } from "@/lib/errors.js";
 import { credentialsSchema } from "@/schema.js";
-import type { Credentials } from "@/types.js";
+import type { CredentialValue, CredentialsRecord } from "@/types.js";
 import {
 	ensureDirectory,
 	expandHome,
@@ -12,29 +12,23 @@ import {
 	writeJsonFile,
 } from "@/utils/files.js";
 
-const DEFAULT_CREDENTIALS: Credentials = {};
-
 /**
  * Load credentials from ~/.local/state/${NAME}/credentials.json
- * Creates the file with empty credentials if it doesn't exist
- * Sets file permissions to 0600 (read/write for owner only) for security
  */
 const loadCredentials = Effect.gen(function* () {
 	const path = yield* Path.Path;
-	const credentialsPath = path.join(STATE_DIRECTORY, CREDENTIALS_FILENAME);
+	const credentialsPathRaw = path.join(STATE_DIRECTORY, CREDENTIALS_FILENAME);
+	const credentialsPath = yield* expandHome(credentialsPathRaw);
 
-	return yield* loadJsonConfig(
-		credentialsPath,
-		DEFAULT_CREDENTIALS,
-		credentialsSchema,
-		{
-			ensurePermissions: 0o600,
-			logMessages: {
-				notFound: `Credentials file not found at ${credentialsPath}, creating empty credentials file...`,
-				created: `Empty credentials file created at ${credentialsPath}`,
-			},
-		},
-	).pipe(
+	return yield* loadJsonConfig(credentialsPath, undefined, credentialsSchema, {
+		ensurePermissions: 0o600,
+	}).pipe(
+		Effect.catchTag("FileSystemError", (error) => {
+			if (error.operation === "readFile") {
+				return Effect.succeed(undefined);
+			}
+			return Effect.fail(error);
+		}),
 		Effect.mapError(
 			(error) =>
 				new CredentialsError({
@@ -49,7 +43,7 @@ const loadCredentials = Effect.gen(function* () {
  * Save credentials to ~/.local/state/${NAME}/credentials.json
  * Maintains strict file permissions (0600)
  */
-const saveCredentials = (credentials: Credentials) =>
+const saveCredentials = (credentials: CredentialsRecord) =>
 	Effect.gen(function* () {
 		const path = yield* Path.Path;
 		const credentialsPathRaw = path.join(STATE_DIRECTORY, CREDENTIALS_FILENAME);
@@ -95,34 +89,66 @@ const saveCredentials = (credentials: Credentials) =>
 /**
  * Get API key for a specific provider
  */
-const getApiKey = (provider: keyof Credentials) =>
+const getCredentials = Effect.gen(function* () {
+	const credentials = yield* loadCredentials;
+
+	if (!credentials) {
+		return yield* Effect.fail(
+			new CredentialsError({
+				message:
+					"No credentials found. Please run 'configure' command to set up your credentials.",
+			}),
+		);
+	}
+
+	return credentials;
+});
+
+/**
+ * Get credential for a specific provider
+ */
+const getCredential = (provider: keyof CredentialsRecord) =>
 	Effect.gen(function* () {
-		const credentials = yield* loadCredentials;
-		return credentials[provider];
+		const credentials = yield* getCredentials;
+
+		const credential = credentials[provider];
+		if (!credential) {
+			return yield* Effect.fail(
+				new CredentialsError({
+					message: `No credentials found for provider: ${provider}. Please run 'configure' command.`,
+				}),
+			);
+		}
+
+		return credential;
 	});
 
 /**
- * Set API key for a specific provider
+ * Set credential for a specific provider
  */
-const setApiKey = (provider: keyof Credentials, apiKey: string) =>
+const setCredential = (
+	provider: keyof CredentialsRecord,
+	credential: CredentialValue,
+) =>
 	Effect.gen(function* () {
 		const credentials = yield* loadCredentials;
-		const updatedCredentials = { ...credentials, [provider]: apiKey };
+		const updatedCredentials = {
+			...(credentials || {}),
+			[provider]: credential,
+		};
 		yield* saveCredentials(updatedCredentials);
 		return updatedCredentials;
 	});
 
-const credentialsService = Effect.gen(function* () {
-	const credentials = yield* loadCredentials;
-
-	return {
-		getCredentials: () => Effect.succeed(credentials),
-		getApiKey: (provider: keyof Credentials) => getApiKey(provider),
-		setApiKey: (provider: keyof Credentials, apiKey: string) =>
-			setApiKey(provider, apiKey),
-		saveCredentials: (newCredentials: Credentials) =>
-			saveCredentials(newCredentials),
-	};
+const credentialsService = Effect.succeed({
+	getCredentials,
+	getCrendtial: (provider: keyof CredentialsRecord) => getCredential(provider),
+	setCrendential: (
+		provider: keyof CredentialsRecord,
+		credential: CredentialValue,
+	) => setCredential(provider, credential),
+	saveCredentials: (newCredentials: CredentialsRecord) =>
+		saveCredentials(newCredentials),
 });
 
 export class CredentialsService extends Effect.Service<CredentialsService>()(

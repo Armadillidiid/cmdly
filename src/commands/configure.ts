@@ -2,14 +2,11 @@ import { Command, Prompt } from "@effect/cli";
 import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { Console, Effect, Layer, Redacted } from "effect";
 import { bundledThemesInfo, type BundledTheme } from "shiki";
-import {
-	SUGGEST_ACTION_CHOICES,
-	SUPPORTED_PROVIDER_IDS,
-} from "@/constants.js";
+import { SUGGEST_ACTION_CHOICES, SUPPORTED_PROVIDER_IDS } from "@/constants.js";
 import { ConfigService } from "@/services/config.js";
 import { CredentialsService } from "@/services/credentials.js";
-import { authenticateWithGitHub } from "@/services/github-oauth.js";
-import type { Credentials } from "@/types.js";
+import { GitHubOAuthService } from "@/services/github-oauth.js";
+import type { Credentials, CredentialValue } from "@/types.js";
 import { markCurrentChoice, stripCurrentMarker } from "@/utils/config.js";
 import { fetchAndCacheModels, fetchProviderModels } from "@/utils/models.js";
 
@@ -23,7 +20,9 @@ const configureCommand = Command.make("configure", {}, () =>
 		const configService = yield* ConfigService;
 		const currentConfig = yield* configService.config();
 		const credentialsService = yield* CredentialsService;
-		const currentCredentials = yield* credentialsService.getCredentials();
+		const currentCredentials = yield* credentialsService.getCredentials.pipe(
+			Effect.catchTag("CredentialsError", () => Effect.succeed(undefined)),
+		);
 
 		const modelsData = yield* fetchAndCacheModels();
 		const providerChoices = markCurrentChoice(
@@ -40,35 +39,55 @@ const configureCommand = Command.make("configure", {}, () =>
 			choices: providerChoices,
 		});
 
-		// Get existing API key for this provider if it exists
-		const existingApiKey = currentCredentials[provider];
+		// Get existing credentials for this provider if it exists
+		const existingCredential =
+			currentCredentials?.[provider as keyof typeof currentCredentials];
 
-		let apiKey: string;
+		let credential: CredentialValue;
 
 		// Step 2: Handle authentication based on provider
 		if (provider === "github-copilot") {
 			// Use GitHub Device Flow for Copilot
 			yield* Console.log(
-				"\n⚠️  GitHub Copilot requires device-based authentication instead of an API key.\n",
+				"\nGitHub Copilot requires device-based authentication instead of an API key.\n",
 			);
 
-			// Check if user already has a token
-			if (existingApiKey) {
+			const githubOAuthService = yield* GitHubOAuthService;
+
+			// Check if user already has OAuth credentials
+			if (existingCredential?.type === "oauth") {
 				const shouldReauth = yield* Prompt.confirm({
 					message: "You already have an access token. Re-authenticate?",
 					initial: false,
 				});
 
 				if (shouldReauth) {
-					apiKey = yield* authenticateWithGitHub;
+					const authResult = yield* githubOAuthService.authenticate;
+					credential = {
+						type: "oauth" as const,
+						access: authResult.token,
+						refresh: authResult.refreshToken,
+						expires: authResult.tokenExpiry,
+					};
 				} else {
-					apiKey = existingApiKey;
+					credential = existingCredential;
 				}
 			} else {
-				apiKey = yield* authenticateWithGitHub;
+				const authResult = yield* githubOAuthService.authenticate;
+				credential = {
+					type: "oauth" as const,
+					access: authResult.token,
+					refresh: authResult.refreshToken,
+					expires: authResult.tokenExpiry,
+				};
 			}
 		} else {
 			// Standard API key input for other providers
+			const existingApiKey =
+				existingCredential?.type === "apiKey"
+					? existingCredential.access
+					: undefined;
+
 			if (existingApiKey) {
 				yield* Console.log(
 					`\nExisting API key found. Press Enter to keep it, or enter a new one.\n`,
@@ -90,7 +109,11 @@ const configureCommand = Command.make("configure", {}, () =>
 				default: existingApiKey || "",
 			});
 
-			apiKey = Redacted.value(redactedApiKey);
+			const apiKey = Redacted.value(redactedApiKey) as string;
+			credential = {
+				type: "apiKey" as const,
+				access: apiKey,
+			};
 		}
 
 		// Step 3: Fetch available models for the provider
@@ -170,7 +193,7 @@ const configureCommand = Command.make("configure", {}, () =>
 		// Step 8: Save credentials
 		const updatedCredentials: Credentials = {
 			...currentCredentials,
-			[provider]: apiKey,
+			[provider]: credential,
 		};
 
 		yield* credentialsService.saveCredentials(updatedCredentials);
@@ -199,6 +222,7 @@ const configureCommand = Command.make("configure", {}, () =>
 	}).pipe(
 		Effect.provide(
 			Layer.mergeAll(
+				GitHubOAuthService.Default,
 				CredentialsService.Default,
 				ConfigService.Default,
 				NodeFileSystem.layer,

@@ -330,5 +330,3 @@ export class GitHubOAuthService extends Effect.Service<GitHubOAuthService>()(
 		effect: githubOAuthService,
 	},
 ) {}
-
-export { authenticateWithGitHub, refreshCopilotToken };

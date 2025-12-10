@@ -1,9 +1,10 @@
 import { Schema } from "effect";
 import { BundledTheme, bundledThemesInfo } from "shiki";
 import { SUGGEST_ACTIONS, SUPPORTED_PROVIDER_IDS } from "./constants.js";
-import type { Provider } from "./lib/providers.js";
 
-export const suggestActionSchema = Schema.Literal(...Object.values(SUGGEST_ACTIONS));
+export const suggestActionSchema = Schema.Literal(
+	...Object.values(SUGGEST_ACTIONS),
+);
 
 export const configSchema = Schema.Struct({
 	model: Schema.String,
@@ -16,14 +17,25 @@ export const configSchema = Schema.Struct({
 	),
 });
 
-const credentialsFields = Object.fromEntries(
-	SUPPORTED_PROVIDER_IDS.map((id) => [id, Schema.optional(Schema.String)]),
-) as Record<Provider, Schema.optional<typeof Schema.String>>;
-
-export const credentialsSchema = Schema.Struct({
-	token: Schema.optional(Schema.String),
-	...credentialsFields,
+const credentialValueSchema = Schema.Struct({
+	type: Schema.Union(Schema.Literal("apiKey"), Schema.Literal("oauth")),
+	refresh: Schema.optional(Schema.String),
+	access: Schema.String,
+	expires: Schema.optional(Schema.Number),
 });
+
+export const credentialsSchema = Schema.UndefinedOr(
+	Schema.partial(
+		Schema.Struct({
+			[SUPPORTED_PROVIDER_IDS[0]]: credentialValueSchema,
+			[SUPPORTED_PROVIDER_IDS[1]]: credentialValueSchema,
+			[SUPPORTED_PROVIDER_IDS[2]]: credentialValueSchema,
+			[SUPPORTED_PROVIDER_IDS[3]]: credentialValueSchema,
+			[SUPPORTED_PROVIDER_IDS[4]]: credentialValueSchema,
+		}),
+	),
+);
+
 // Models.dev API schemas
 export const modelCostSchema = Schema.Struct({
 	input: Schema.optional(Schema.Number),

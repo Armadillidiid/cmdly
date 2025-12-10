@@ -11,6 +11,8 @@ import type {
 export type Config = typeof configSchema.Type;
 export type SuggestAction = typeof suggestActionSchema.Type;
 export type Credentials = typeof credentialsSchema.Type;
+export type CredentialsRecord = Exclude<Credentials, undefined>;
+export type CredentialValue = CredentialsRecord[keyof CredentialsRecord];
 export type ModelInfo = typeof modelInfoSchema.Type;
 export type ProviderInfo = typeof providerInfoSchema.Type;
 export type ModelsDevResponse = typeof modelsDevResponseSchema.Type;

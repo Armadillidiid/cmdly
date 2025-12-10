@@ -21,7 +21,7 @@ const aiService = Effect.gen(function* () {
 
 	// Get API key for the configured provider (map provider name to credential key)
 	const credentialKey = providerName as keyof Credentials;
-	const apiKey = yield* credentials.getApiKey(credentialKey);
+	const apiKey = yield* credentials.getCrendtial(credentialKey);
 
 	if (!apiKey) {
 		return yield* Effect.fail(
@@ -31,7 +31,7 @@ const aiService = Effect.gen(function* () {
 		);
 	}
 
-	const provider = yield* getProvider(providerName, apiKey);
+	const provider = yield* getProvider(providerName, apiKey.access);
 
 	const defaultOpts: Parameters<typeof streamText>[0] & {
 		maxTokens: number;
