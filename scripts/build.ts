@@ -14,6 +14,7 @@ const isWatch = process.argv.includes("--watch");
 // Build pkgroll arguments
 const args = [
 	isWatch ? "--watch" : null,
+	isWatch ? "--sourcemap" : null,
 	!isWatch ? "--minify" : null,
 	`--define.__VERSION__="${pkg.version}"`,
 	`--define.__NAME__="${pkg.name}"`,
