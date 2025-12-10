@@ -30,15 +30,14 @@ const loadCredentials = Effect.gen(function* () {
 			if (error.operation === "readFile") {
 				return Effect.succeed(undefined);
 			}
-			return Effect.fail(error);
-		}),
-		Effect.mapError(
-			(error) =>
+			return Effect.fail(
 				new CredentialsError({
-					message: "Failed to load credentials",
+					message:
+						"Failed to load credentials. Please run 'configure' command if you haven't already.",
 					cause: error,
 				}),
-		),
+			);
+		}),
 	);
 });
 
