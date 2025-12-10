@@ -53,17 +53,21 @@ export const runCommand = (command: string) =>
  * Copy command to system clipboard
  */
 export const copyCommand = (command: string) =>
-	Effect.asVoid(
-		Effect.try({
-			try: () => clipboard.copy(command),
-			catch: (err) => {
-				return new ActionError({
-					message: "Failed to copy to clipboard",
-					cause: err,
+	Effect.tryPromise({
+		try: () =>
+			new Promise<void>((resolve, reject) => {
+				clipboard.copy(command, (err) => {
+					if (err) reject(err);
+					else resolve();
 				});
-			},
-		}),
-	);
+			}),
+		catch: (err) => {
+			return new ActionError({
+				message: "Failed to copy to clipboard",
+				cause: err,
+			});
+		},
+	});
 
 export const handleAction = (
 	action: Exclude<SuggestAction, "revise">,

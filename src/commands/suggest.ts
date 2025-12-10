@@ -136,7 +136,7 @@ const getSuggestAndLog = (
 	Effect.gen(function* () {
 		const command = yield* ai.suggest(target, messages);
 		const highlighted = yield* highlightShell(command);
-		yield* Console.log(`\n${highlighted}\n`);
+		yield* Console.log(`\n${highlighted}`);
 		return command;
 	});
 
