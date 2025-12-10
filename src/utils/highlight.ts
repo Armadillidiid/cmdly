@@ -1,5 +1,4 @@
 import { codeToANSI } from "@shikijs/cli";
-import { bundledThemesInfo, type BundledTheme } from "shiki";
 import { Effect } from "effect";
 import { ConfigService } from "@/services/config.js";
 

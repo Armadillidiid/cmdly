@@ -3,7 +3,6 @@ import { NodeFileSystem, NodePath } from "@effect/platform-node";
 import { Console, Effect, Layer, Redacted } from "effect";
 import { bundledThemesInfo, type BundledTheme } from "shiki";
 import {
-	NAME,
 	SUGGEST_ACTION_CHOICES,
 	SUPPORTED_PROVIDER_IDS,
 } from "@/constants.js";
