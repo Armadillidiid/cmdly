@@ -34,7 +34,7 @@
 		"typecheck": "tsc -b tsconfig.json",
 		"test": "vitest run",
 		"changeset-version": "changeset version",
-		"changeset-publish": "pnpm build && pnpm vitest && changeset publish",
+		"changeset-publish": "pnpm build && pnpm vitest && changeset publish && changeset tag && git push --tags",
 		"format": "biome format --write",
 		"lint": "biome lint --write",
 		"check": "biome check --write --unsafe"
