@@ -67,8 +67,6 @@ const saveCredentials = (credentials: CredentialsRecord) =>
 					}),
 			),
 		);
-
-		yield* Effect.log(`Credentials saved to ${credentialsPath}`);
 	});
 
 /**

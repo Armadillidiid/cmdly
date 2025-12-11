@@ -63,8 +63,6 @@ const saveConfig = (config: Config) =>
 					}),
 			),
 		);
-
-		yield* Effect.log(`Config saved to ${configPath}`);
 	});
 
 const configService = Effect.gen(function* () {

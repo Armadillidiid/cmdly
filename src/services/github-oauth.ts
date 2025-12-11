@@ -213,8 +213,6 @@ const getCopilotToken = (
 	githubAccessToken: string,
 ): Effect.Effect<CopilotTokenResponse, GitHubOAuthError> =>
 	Effect.gen(function* () {
-		yield* Console.log("Retrieving Copilot token...\n");
-
 		const response = yield* Effect.tryPromise({
 			try: () =>
 				globalThis
