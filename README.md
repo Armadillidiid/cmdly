@@ -1,13 +1,8 @@
 # ✨ `cmdly`
 
-A drop-in replacement for the recently deprecated [`gh-copilot`](https://github.com/github/gh-copilot).
+A drop-in replacement for the recently deprecated [`gh-copilot`](https://github.com/github/gh-copilot) with multi-provider support. Generate shell commands with natural language and get detailed explanation.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D23-brightgreen.svg)](https://nodejs.org/)
-
-## Demo
-
-PLACEHOLDER - VIDEO DEMO
+https://github.com/user-attachments/assets/d3dda9c8-e202-4d7a-bbc8-bac9b32f7ac7
 
 ## Table of Contents
 
