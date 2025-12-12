@@ -5,14 +5,17 @@
 	"packageManager": "pnpm@10.14.0",
 	"license": "MIT",
 	"description": "",
+	"keywords": [
+		"ai",
+		"cli"
+	],
+	"homepage": "https://github.com/Armadillidiid/cmdly",
+	"bugs": {
+		"url": "https://github.com/Armadillidiid/cmdly/issues"
+	},
+	"author": "Emmanuel Isenah <emmanuelisenah@gmail.com> (https://emmanuelisenah.com)",
 	"bin": {
 		"cmdly": "./dist/index.js"
-	},
-	"exports": {
-		"./bin": {
-			"require": "./dist/index.js",
-			"import": "./dist/index.js"
-		}
 	},
 	"files": [
 		"dist"
