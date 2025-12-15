@@ -1,5 +1,11 @@
 # cmdly
 
+## 0.1.0
+
+### Minor Changes
+
+- [`dd1a636`](https://github.com/Armadillidiid/cmdly/commit/dd1a63669d73ed37ed259820c861f958ba6e3a8d) Thanks [@Armadillidiid](https://github.com/Armadillidiid)! - docs: update README with video demo
+
 ## 0.0.1
 
 ### Patch Changes
