@@ -16,9 +16,43 @@ https://github.com/user-attachments/assets/d3dda9c8-e202-4d7a-bbc8-bac9b32f7ac7
 
 ## Installation
 
+Download prebuilt binary from GitHub Releases.
+
+### Linux x64
+
 ```bash
-npm install -g cmdly
+curl -fsSL -o /tmp/cmdly-linux-x64.tar.gz https://github.com/Armadillidiid/cmdly/releases/latest/download/cmdly-linux-x64.tar.gz
+tar -xzf /tmp/cmdly-linux-x64.tar.gz -C /tmp
+install -m 755 /tmp/cmdly-linux-x64 ~/.local/bin/cmdly
 ```
+
+### macOS arm64
+
+```bash
+curl -fsSL -o /tmp/cmdly-darwin-arm64.tar.gz https://github.com/Armadillidiid/cmdly/releases/latest/download/cmdly-darwin-arm64.tar.gz
+tar -xzf /tmp/cmdly-darwin-arm64.tar.gz -C /tmp
+install -m 755 /tmp/cmdly-darwin-arm64 ~/.local/bin/cmdly
+```
+
+Ensure `~/.local/bin` is on `PATH`.
+
+### Verify checksum (optional)
+
+```bash
+curl -fsSL -O https://github.com/Armadillidiid/cmdly/releases/latest/download/cmdly-linux-x64.tar.gz
+curl -fsSL -O https://github.com/Armadillidiid/cmdly/releases/latest/download/cmdly-linux-x64.tar.gz.sha256
+sha256sum -c cmdly-linux-x64.tar.gz.sha256
+```
+
+### Supported targets
+
+- `linux-x64`
+- `darwin-arm64`
+
+### Not supported in v1
+
+- Windows
+- Intel macOS (`darwin-x64`)
 
 ## Quick Start
 

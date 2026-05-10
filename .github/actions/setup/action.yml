@@ -7,7 +7,7 @@ runs:
     - name: Install node
       uses: actions/setup-node@v4
       with:
-        node-version: "23"
+        node-version: "26"
         registry-url: 'https://registry.npmjs.org'
 
     - name: ⚙️ Enable Corepack
