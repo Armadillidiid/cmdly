@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "*"
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
@@ -13,9 +11,13 @@ permissions:
 jobs:
   version:
     name: Version
-    if: github.ref_type == 'branch'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      published_packages: ${{ steps.changesets.outputs.publishedPackages }}
+      release_tag: ${{ steps.release_meta.outputs.tag }}
+      release_version: ${{ steps.release_meta.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,14 +35,42 @@ jobs:
         with:
           version: pnpm changeset-version
           publish: pnpm changeset-publish
+          createGithubReleases: false
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive release metadata
+        id: release_meta
+        if: steps.changesets.outputs.published == 'true'
+        uses: actions/github-script@v7
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+        with:
+          script: |
+            const raw = process.env.PUBLISHED_PACKAGES ?? "[]";
+            let packages;
+            try {
+              packages = JSON.parse(raw);
+            } catch {
+              core.setFailed(`Invalid publishedPackages JSON: ${raw}`);
+              return;
+            }
+
+            const match = packages.find((pkg) => pkg?.name === "cmdly");
+            if (!match?.version) {
+              core.setFailed(`Could not find cmdly version in publishedPackages: ${raw}`);
+              return;
+            }
+
+            core.setOutput("version", match.version);
+            core.setOutput("tag", `v${match.version}`);
 
   binaries:
     name: Binary ${{ matrix.target }}
-    if: github.ref_type == 'tag'
+    if: needs.version.outputs.published == 'true'
+    needs: version
     runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 15
     strategy:
@@ -72,12 +102,38 @@ jobs:
           tar -C release -czf "release/cmdly-${{ matrix.target }}.tar.gz" "cmdly-${{ matrix.target }}"
           ${{ matrix.checksum_cmd }} "release/cmdly-${{ matrix.target }}.tar.gz" > "release/cmdly-${{ matrix.target }}.tar.gz.sha256"
 
-      - name: Upload assets
-        uses: softprops/action-gh-release@v3
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: cmdly-${{ matrix.target }}
+          path: |
             release/cmdly-${{ matrix.target }}.tar.gz
             release/cmdly-${{ matrix.target }}.tar.gz.sha256
+
+  release:
+    name: Release assets
+    needs:
+      - version
+      - binaries
+    if: needs.version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.version.outputs.release_tag }}
+          name: ${{ needs.version.outputs.release_tag }}
+          files: |
+            release-assets/*.tar.gz
+            release-assets/*.tar.gz.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
