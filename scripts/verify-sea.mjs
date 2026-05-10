@@ -24,7 +24,7 @@ if (!target) {
   );
 }
 
-const binary = join(rootDir, "dist-app", target, "cmdly");
+const binary = join(rootDir, "dist", target, "cmdly");
 
 if (!existsSync(binary)) {
   throw new Error(`SEA binary not found: ${binary}`);

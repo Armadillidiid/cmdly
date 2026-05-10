@@ -55,7 +55,7 @@ jobs:
       - name: Archive linux-x64
         run: |
           mkdir -p release
-          cp dist-app/linux-x64/cmdly release/cmdly-linux-x64
+          cp dist/linux-x64/cmdly release/cmdly-linux-x64
           tar -C release -czf release/cmdly-linux-x64.tar.gz cmdly-linux-x64
           sha256sum release/cmdly-linux-x64.tar.gz > release/cmdly-linux-x64.tar.gz.sha256
 
@@ -83,7 +83,7 @@ jobs:
       - name: Archive darwin-arm64
         run: |
           mkdir -p release
-          cp dist-app/darwin-arm64/cmdly release/cmdly-darwin-arm64
+          cp dist/darwin-arm64/cmdly release/cmdly-darwin-arm64
           tar -C release -czf release/cmdly-darwin-arm64.tar.gz cmdly-darwin-arm64
           shasum -a 256 release/cmdly-darwin-arm64.tar.gz > release/cmdly-darwin-arm64.tar.gz.sha256
 

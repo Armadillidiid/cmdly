@@ -7,7 +7,6 @@ yarn-error.log
 tmp/
 build/
 dist/
-dist-app/
 .sea/
 .direnv/
 .env

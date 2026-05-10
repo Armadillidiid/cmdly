@@ -39,7 +39,7 @@
 		"build:sea:darwin-arm64": "node scripts/build-sea.mjs --target darwin-arm64",
 		"verify:sea": "node scripts/verify-sea.mjs",
 		"prepare": "effect-language-service patch",
-		"clean": "rm -rf dist dist-app .sea",
+		"clean": "rm -rf dist .sea",
 		"typecheck": "tsc -b tsconfig.json",
 		"test": "vitest run",
 		"changeset-version": "changeset version",

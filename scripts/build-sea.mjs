@@ -64,9 +64,9 @@ if (Number.parseInt(process.versions.node.split(".")[0], 10) !== 26) {
 }
 
 const seaDir = join(rootDir, ".sea");
-const bundlePath = join(seaDir, "index.mjs");
+const bundlePath = join(seaDir, "index.cjs");
 const seaConfigPath = join(seaDir, `sea-config.${target}.json`);
-const outDir = join(rootDir, "dist-app", target);
+const outDir = join(rootDir, "dist", target);
 const outFile = join(outDir, "cmdly");
 
 rmSync(seaDir, { recursive: true, force: true });
@@ -77,7 +77,7 @@ await build({
   entryPoints: [join(rootDir, "src", "bin.ts")],
   outfile: bundlePath,
   bundle: true,
-  format: "esm",
+  format: "cjs",
   platform: "node",
   target: "node26",
   tsconfig: join(rootDir, "tsconfig.json"),
@@ -90,7 +90,7 @@ await build({
 
 const seaConfig = {
   main: bundlePath,
-  mainFormat: "module",
+  mainFormat: "commonjs",
   output: outFile,
   disableExperimentalSEAWarning: true,
   useSnapshot: false,
