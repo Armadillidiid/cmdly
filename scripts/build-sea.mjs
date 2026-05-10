@@ -10,52 +10,60 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = resolve(__dirname, "..");
 
-const supportedTargets = new Set(["linux-x64", "darwin-arm64"]);
+const targets = ["darwin-arm64", "darwin-x64", "linux-x64", "linux-arm64"];
+const excludedTargets = new Map([
+  [
+    "darwin-x64",
+    "Node SEA on Intel macOS is currently unstable (upstream issue); excluding target.",
+  ],
+]);
+
+const enabledTargets = targets.filter((target) => {
+  const reason = excludedTargets.get(target);
+  if (!reason) {
+    return true;
+  }
+  console.warn(`[build:sea] Excluding ${target}: ${reason}`);
+  return false;
+});
 
 const hostTarget = () => {
   const platform = process.platform;
   const arch = process.arch;
+  if (platform === "linux" && arch === "arm64") {
+    return "linux-arm64";
+  }
   if (platform === "linux" && arch === "x64") {
     return "linux-x64";
+  }
+  if (platform === "darwin" && arch === "x64") {
+    return "darwin-x64";
   }
   if (platform === "darwin" && arch === "arm64") {
     return "darwin-arm64";
   }
   return null;
 };
-
-const parseTarget = () => {
-  const idx = process.argv.indexOf("--target");
-  if (idx === -1) {
-    return null;
-  }
-  const target = process.argv[idx + 1];
-  if (!target) {
-    throw new Error("Missing value for --target");
-  }
-  return target;
-};
-
-const targetArg = parseTarget();
 const detectedHostTarget = hostTarget();
-
-if (targetArg && !supportedTargets.has(targetArg)) {
-  throw new Error(`Unsupported target: ${targetArg}`);
-}
 
 if (!detectedHostTarget) {
   throw new Error(
-    `Unsupported host platform ${process.platform}-${process.arch}. Supported host targets: linux-x64, darwin-arm64.`,
+    `Unsupported host platform ${process.platform}-${process.arch}. Configured targets: ${targets.join(", ")}.`,
   );
 }
 
-const target = targetArg ?? detectedHostTarget;
-
-if (target !== detectedHostTarget) {
+if (!targets.includes(detectedHostTarget)) {
   throw new Error(
-    `Target ${target} does not match host ${detectedHostTarget}. Build this target on a matching runner.`,
+    `Host target ${detectedHostTarget} is not configured in targets list.`,
   );
 }
+
+if (!enabledTargets.includes(detectedHostTarget)) {
+  const reason = excludedTargets.get(detectedHostTarget) ?? "Excluded target.";
+  throw new Error(`Host target ${detectedHostTarget} is excluded. ${reason}`);
+}
+
+const target = detectedHostTarget;
 
 if (Number.parseInt(process.versions.node.split(".")[0], 10) !== 26) {
   throw new Error(

@@ -47,12 +47,19 @@ sha256sum -c cmdly-linux-x64.tar.gz.sha256
 ### Supported targets
 
 - `linux-x64`
+- `linux-arm64`
 - `darwin-arm64`
 
 ### Not supported in v1
 
 - Windows
 - Intel macOS (`darwin-x64`)
+
+### SEA build notes (dev)
+
+- Configured targets: `darwin-arm64`, `darwin-x64`, `linux-x64`, `linux-arm64`
+- Runtime excludes `darwin-x64` and prints warning with reason
+- SEA entry is CommonJS (`format: "cjs"`, `mainFormat: "commonjs"`) because ESM bundle hit dynamic `require("node:assert")` path at runtime
 
 ## Quick Start
 

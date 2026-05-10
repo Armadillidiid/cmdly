@@ -35,8 +35,6 @@
 		"dev": "node --import=tsx src/bin.ts --watch",
 		"build": "pnpm build:sea",
 		"build:sea": "node scripts/build-sea.mjs",
-		"build:sea:linux-x64": "node scripts/build-sea.mjs --target linux-x64",
-		"build:sea:darwin-arm64": "node scripts/build-sea.mjs --target darwin-arm64",
 		"verify:sea": "node scripts/verify-sea.mjs",
 		"prepare": "effect-language-service patch",
 		"clean": "rm -rf dist .sea",
