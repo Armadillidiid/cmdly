@@ -12,14 +12,17 @@ import { handleAction } from "@/utils/actions.js";
 import { highlightShell } from "@/utils/highlight.js";
 import { displayStream } from "@/utils/stream.js";
 
-const programLayer = Layer.mergeAll(
+const baseLayer = Layer.mergeAll(
+	NodeFileSystem.layer,
+	NodePath.layer,
 	GitHubOAuthService.Default,
+);
+
+const programLayer = Layer.mergeAll(
 	CredentialsService.Default,
 	ConfigService.Default,
 	AiService.Default,
-	NodeFileSystem.layer,
-	NodePath.layer,
-);
+).pipe(Layer.provideMerge(baseLayer));
 
 const targetChoices = ["shell", "git"] as const;
 

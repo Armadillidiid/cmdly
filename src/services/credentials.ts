@@ -64,12 +64,10 @@ const getCredentials = Effect.gen(function* () {
 	const credentials = yield* loadCredentials;
 
 	if (!credentials) {
-		return yield* Effect.fail(
-			new CredentialsError({
-				message:
-					"No credentials found. Please run 'configure' command to set up your credentials.",
-			}),
-		);
+		return yield* new CredentialsError({
+			message:
+				"No credentials found. Please run 'configure' command to set up your credentials.",
+		});
 	}
 
 	return credentials;
@@ -84,11 +82,9 @@ const getCredential = (provider: keyof CredentialsRecord) =>
 
 		const credential = credentials[provider];
 		if (!credential) {
-			return yield* Effect.fail(
-				new CredentialsError({
-					message: `No credentials found for provider: ${provider}. Please run 'configure' command.`,
-				}),
-			);
+			return yield* new CredentialsError({
+				message: `No credentials found for provider: ${provider}. Please run 'configure' command.`,
+			});
 		}
 
 		if (
@@ -144,6 +140,7 @@ const credentialsService = Effect.succeed({
 		saveCredentials(newCredentials),
 });
 
+/** @effect-expect-leaking FileSystem Path */
 export class CredentialsService extends Effect.Service<CredentialsService>()(
 	"CredentialsService",
 	{
