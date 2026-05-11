@@ -8,14 +8,17 @@ import { GitHubOAuthService } from "@/services/github-oauth.js";
 import { highlightMarkdown } from "@/utils/highlight.js";
 import { displayStream } from "@/utils/stream.js";
 
-const programLayer = Layer.mergeAll(
+const baseLayer = Layer.mergeAll(
+	NodeFileSystem.layer,
+	NodePath.layer,
 	GitHubOAuthService.Default,
+);
+
+const programLayer = Layer.mergeAll(
 	CredentialsService.Default,
 	ConfigService.Default,
 	AiService.Default,
-	NodeFileSystem.layer,
-	NodePath.layer,
-);
+).pipe(Layer.provideMerge(baseLayer));
 
 const command = Args.optional(Args.text({ name: "command" }));
 

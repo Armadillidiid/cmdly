@@ -53,16 +53,17 @@ export const readJsonFile = <A, I, R>(
 
 		const content = yield* fs.readFileString(filePath);
 
-		const parsed = yield* Effect.try({
-			try: () => JSON.parse(content) as unknown,
-			catch: (error) =>
-				new FileSystemError({
-					message: "Failed to parse JSON",
-					operation: "JSON.parse",
-					path: filePath,
-					cause: error,
-				}),
-		});
+		const parsed = yield* Schema.decodeUnknown(Schema.parseJson())(content).pipe(
+			Effect.mapError(
+				(error) =>
+					new FileSystemError({
+						message: "Failed to parse JSON",
+						operation: "Schema.parseJson",
+						path: filePath,
+						cause: error,
+					}),
+			),
+		);
 
 		return yield* Schema.decodeUnknown(schema)(parsed).pipe(
 			Effect.mapError(
@@ -84,12 +85,33 @@ export const writeJsonFile = (
 	filePath: string,
 	data: unknown,
 	mode = 0o644,
-): Effect.Effect<void, PlatformError, FileSystem.FileSystem> =>
+): Effect.Effect<void, PlatformError | FileSystemError, FileSystem.FileSystem> =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
-		yield* fs.writeFileString(filePath, JSON.stringify(data, null, 2));
+		const json = yield* Schema.encode(Schema.parseJson())(data).pipe(
+			Effect.mapError(
+				(error) =>
+					new FileSystemError({
+						message: "Failed to stringify JSON",
+						operation: "Schema.encode(parseJson)",
+						path: filePath,
+						cause: error,
+					}),
+			),
+		);
+		yield* fs.writeFileString(filePath, json);
 		yield* setFilePermissions(filePath, mode);
-	});
+	}).pipe(
+		Effect.mapError(
+			(error) =>
+				new FileSystemError({
+					message: "Failed to write JSON file",
+					operation: "writeJsonFile",
+					path: filePath,
+					cause: error,
+				}),
+		),
+	);
 
 /**
  * Set file permissions (Unix only)

@@ -2,7 +2,14 @@
 	"name": "cmdly",
 	"version": "0.1.0",
 	"type": "module",
-	"packageManager": "pnpm@10.14.0",
+	"packageManager": "pnpm@11.0.9",
+	"devEngines": {
+		"packageManager": {
+			"name": "pnpm",
+			"version": "11.0.9",
+			"onFail": "download"
+		}
+	},
 	"license": "MIT",
 	"description": "",
 	"keywords": [
@@ -14,12 +21,6 @@
 		"url": "https://github.com/Armadillidiid/cmdly/issues"
 	},
 	"author": "Emmanuel Isenah <emmanuelisenah@gmail.com> (https://emmanuelisenah.com)",
-	"bin": {
-		"cmdly": "./dist/index.js"
-	},
-	"files": [
-		"dist"
-	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Armadillidiid/cmdly"
@@ -28,18 +29,19 @@
 		"access": "public"
 	},
 	"engines": {
-		"node": ">=23"
+		"node": ">=26"
 	},
 	"scripts": {
 		"dev": "node --import=tsx src/bin.ts --watch",
-		"build": "ncc build src/bin.ts -o dist -m",
-		"postbuild": "node scripts/inject-constant.js",
+		"build": "pnpm build:sea",
+		"build:sea": "node scripts/build-sea.mjs",
+		"verify:sea": "node scripts/verify-sea.mjs",
 		"prepare": "effect-language-service patch",
-		"clean": "rm -rf dist/*",
+		"clean": "rm -rf dist .sea",
 		"typecheck": "tsc -b tsconfig.json",
 		"test": "vitest run",
 		"changeset-version": "changeset version",
-		"changeset-publish": "pnpm build && pnpm vitest && changeset publish && changeset tag && git push --tags",
+		"changeset-publish": "pnpm build && pnpm vitest && changeset tag && git push --tags",
 		"format": "biome format --write",
 		"lint": "biome lint --write",
 		"check": "biome check --write --unsafe"
@@ -55,7 +57,7 @@
 		"@effect/vitest": "^0.27.0",
 		"@types/copy-paste": "^2.1.0",
 		"@types/node": "^24.10.1",
-		"@vercel/ncc": "^0.38.4",
+		"esbuild": "^0.27.0",
 		"effect": "^3.19.9",
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",

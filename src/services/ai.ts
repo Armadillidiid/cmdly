@@ -24,11 +24,9 @@ const aiService = Effect.gen(function* () {
 	const apiKey = yield* credentials.getCrendtial(credentialKey);
 
 	if (!apiKey) {
-		return yield* Effect.fail(
-			new AiServiceError({
-				message: `No API key found for provider: ${providerName}`,
-			}),
-		);
+		return yield* new AiServiceError({
+			message: `No API key found for provider: ${providerName}`,
+		});
 	}
 
 	const provider = yield* getProvider(providerName, apiKey.access);

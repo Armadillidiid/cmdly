@@ -9,12 +9,17 @@ permissions:
   pull-requests: write
   id-token: write
 jobs:
-  release:
-    name: Release
+  version:
+    name: Version
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+      published_packages: ${{ steps.changesets.outputs.publishedPackages }}
+      release_tag: ${{ steps.release_meta.outputs.tag }}
+      release_version: ${{ steps.release_meta.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -23,17 +28,107 @@ jobs:
 
       - name: Build
         run: pnpm build
-
+        
       - name: Update npm to latest version #  Trusted publishing requires version 11.5.1 or later.
         run: npm install -g npm@latest
 
-      - name: Create Release Pull Request or Publish to npm
+      - name: Create Release Pull Request or Tag Release
         id: changesets
         uses: changesets/action@v1
         with:
           version: pnpm changeset-version
           publish: pnpm changeset-publish
+          createGithubReleases: false
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Derive release metadata
+        id: release_meta
+        if: steps.changesets.outputs.published == 'true'
+        uses: actions/github-script@v9
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
+        with:
+          script: |
+            const packages = JSON.parse(process.env.PUBLISHED_PACKAGES ?? "[]");
+            const version = packages?.[0]?.version;
+            if (!version) {
+              core.setFailed(`Could not read version from publishedPackages: ${process.env.PUBLISHED_PACKAGES}`);
+              return;
+            }
+
+            core.setOutput("version", version);
+            core.setOutput("tag", `v${version}`);
+
+  binaries:
+    name: Binary ${{ matrix.target }}
+    if: needs.version.outputs.published == 'true'
+    needs: version
+    runs-on: ${{ matrix.runs_on }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x64
+            runs_on: ubuntu-latest
+            checksum_cmd: sha256sum
+          - target: linux-arm64
+            runs_on: ubuntu-24.04-arm
+            checksum_cmd: sha256sum
+          - target: darwin-arm64
+            runs_on: macos-latest
+            checksum_cmd: shasum -a 256
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+
+      - name: Build binary
+        run: pnpm build:sea
+
+      - name: Archive binary
+        run: |
+          mkdir -p release
+          cp "dist/${{ matrix.target }}/cmdly" "release/cmdly-${{ matrix.target }}"
+          tar -C release -czf "release/cmdly-${{ matrix.target }}.tar.gz" "cmdly-${{ matrix.target }}"
+          ${{ matrix.checksum_cmd }} "release/cmdly-${{ matrix.target }}.tar.gz" > "release/cmdly-${{ matrix.target }}.tar.gz.sha256"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: cmdly-${{ matrix.target }}
+          path: |
+            release/cmdly-${{ matrix.target }}.tar.gz
+            release/cmdly-${{ matrix.target }}.tar.gz.sha256
+
+  release:
+    name: Release assets
+    needs:
+      - version
+      - binaries
+    if: needs.version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.version.outputs.release_tag }}
+          name: ${{ needs.version.outputs.release_tag }}
+          files: |
+            release-assets/*.tar.gz
+            release-assets/*.tar.gz.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
