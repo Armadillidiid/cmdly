@@ -39,7 +39,7 @@ jobs:
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Derive release metadata
         id: release_meta
