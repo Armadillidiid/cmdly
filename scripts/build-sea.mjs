@@ -65,9 +65,10 @@ if (!enabledTargets.includes(detectedHostTarget)) {
 
 const target = detectedHostTarget;
 
-if (Number.parseInt(process.versions.node.split(".")[0], 10) !== 26) {
+const nodeMajor = Number.parseInt(process.versions.node.split(".")[0], 10);
+if (nodeMajor < 26) {
   throw new Error(
-    `Node 26.x required for SEA build, found ${process.version}. Use Node 26.x.`,
+    `Node 26+ required for SEA build, found ${process.version}. Use Node 26 or newer.`,
   );
 }
 
