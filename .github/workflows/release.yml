@@ -44,7 +44,7 @@ jobs:
       - name: Derive release metadata
         id: release_meta
         if: steps.changesets.outputs.published == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}
         with:
