@@ -21,6 +21,12 @@
 		"url": "https://github.com/Armadillidiid/cmdly/issues"
 	},
 	"author": "Emmanuel Isenah <emmanuelisenah@gmail.com> (https://emmanuelisenah.com)",
+	"bin": {
+		"cmdly": "./dist/index.cjs"
+	},
+	"files": [
+		"dist"
+	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Armadillidiid/cmdly"
@@ -33,15 +39,14 @@
 	},
 	"scripts": {
 		"dev": "node --import=tsx src/bin.ts --watch",
-		"build": "pnpm build:sea",
-		"build:sea": "node scripts/build-sea.mjs",
-		"verify:sea": "node scripts/verify-sea.mjs",
+		"build": "node scripts/build-sea.mjs",
+		"build:verify": "node scripts/verify-sea.mjs",
 		"prepare": "effect-language-service patch",
-		"clean": "rm -rf dist .sea",
+		"clean": "rm -rf dist",
 		"typecheck": "tsc -b tsconfig.json",
 		"test": "vitest run",
 		"changeset-version": "changeset version",
-		"changeset-publish": "pnpm build && pnpm vitest && changeset tag && git push --tags",
+		"changeset-publish": "pnpm build && pnpm vitest && changeset publish && changeset tag && git push --tags",
 		"format": "biome format --write",
 		"lint": "biome lint --write",
 		"check": "biome check --write --unsafe"

@@ -88,7 +88,7 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Build binary
-        run: pnpm build:sea
+        run: pnpm build
 
       - name: Archive binary
         run: |
