@@ -93,9 +93,10 @@ jobs:
       - name: Archive binary
         run: |
           mkdir -p release
-          cp "dist/${{ matrix.target }}/cmdly" "release/cmdly-${{ matrix.target }}"
-          tar -C release -czf "release/cmdly-${{ matrix.target }}.tar.gz" "cmdly-${{ matrix.target }}"
-          ${{ matrix.checksum_cmd }} "release/cmdly-${{ matrix.target }}.tar.gz" > "release/cmdly-${{ matrix.target }}.tar.gz.sha256"
+          ASSET_NAME="cmdly-v${{ needs.version.outputs.release_version }}-${{ matrix.target }}"
+          cp "dist/${{ matrix.target }}/cmdly" "release/${ASSET_NAME}"
+          tar -C release -czf "release/${ASSET_NAME}.tar.gz" "${ASSET_NAME}"
+          ${{ matrix.checksum_cmd }} "release/${ASSET_NAME}.tar.gz" > "release/${ASSET_NAME}.tar.gz.sha256"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7

@@ -22,10 +22,12 @@
 	},
 	"author": "Emmanuel Isenah <emmanuelisenah@gmail.com> (https://emmanuelisenah.com)",
 	"bin": {
-		"cmdly": "./dist/index.cjs"
+		"cmdly": "./scripts/launcher.mjs"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"scripts/launcher.mjs",
+		"scripts/postinstall.mjs"
 	],
 	"repository": {
 		"type": "git",
@@ -41,6 +43,7 @@
 		"dev": "node --import=tsx src/bin.ts --watch",
 		"build": "node scripts/build-sea.mjs",
 		"build:verify": "node scripts/verify-sea.mjs",
+		"postinstall": "node scripts/postinstall.mjs",
 		"prepare": "effect-language-service patch",
 		"clean": "rm -rf dist",
 		"typecheck": "tsc -b tsconfig.json",
