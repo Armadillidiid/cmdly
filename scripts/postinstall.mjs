@@ -10,8 +10,6 @@ import {
   readFileSync,
   renameSync,
   rmSync,
-  unlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
@@ -24,11 +22,8 @@ import pkg from "../package.json" with { type: "json" };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = join(__dirname, "..");
-const distDir = join(packageRoot, "dist");
-const nativeDir = join(distDir, "native");
-const nativeBinaryPath = join(nativeDir, "cmdly");
-const metadataPath = join(nativeDir, "metadata.json");
-const statePath = join(nativeDir, "install-state.json");
+const binDir = join(packageRoot, "bin");
+const binPath = join(binDir, "cmdly");
 const supportedTargets = ["linux-x64", "linux-arm64", "darwin-arm64"];
 const releaseBaseUrl =
   process.env.CMDLY_DOWNLOAD_BASE_URL ??
@@ -45,25 +40,6 @@ const detectTarget = () => {
     return "darwin-arm64";
   }
   return null;
-};
-
-const loadJson = (path) => {
-  try {
-    return JSON.parse(readFileSync(path, "utf8"));
-  } catch {
-    return null;
-  }
-};
-
-const saveState = (state) => {
-  mkdirSync(nativeDir, { recursive: true });
-  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
-};
-
-const clearState = () => {
-  if (existsSync(statePath)) {
-    unlinkSync(statePath);
-  }
 };
 
 const downloadToFile = async (url, filePath) => {
@@ -120,11 +96,11 @@ const installBinary = (archivePath, binaryName) => {
     throw new Error(`archive did not contain expected binary: ${binaryName}`);
   }
 
-  mkdirSync(nativeDir, { recursive: true });
-  const tempTarget = join(nativeDir, ".cmdly.tmp");
+  mkdirSync(binDir, { recursive: true });
+  const tempTarget = join(binDir, ".cmdly.tmp");
   copyFileSync(extractedBinary, tempTarget);
   chmodSync(tempTarget, 0o755);
-  renameSync(tempTarget, nativeBinaryPath);
+  renameSync(tempTarget, binPath);
 
   rmSync(tempRoot, { recursive: true, force: true });
 };
@@ -133,26 +109,13 @@ const main = async () => {
   const target = detectTarget();
 
   if (!target) {
-    saveState({
-      status: "unsupported_target",
-      platform: process.platform,
-      arch: process.arch,
-      supportedTargets,
-      installedAt: new Date().toISOString(),
-    });
     console.warn(
-      `[postinstall] skipping native install for unsupported target ${process.platform}-${process.arch}`,
+      `[postinstall] skipping unsupported target ${process.platform}-${process.arch}; supported: ${supportedTargets.join(", ")}`,
     );
     return;
   }
 
-  const cached = loadJson(metadataPath);
-  if (
-    cached?.version === pkg.version &&
-    cached?.target === target &&
-    existsSync(nativeBinaryPath)
-  ) {
-    clearState();
+  if (target === "linux-x64" && existsSync(binPath)) {
     return;
   }
 
@@ -179,35 +142,13 @@ const main = async () => {
     const archiveBinaryName = `cmdly-v${pkg.version}-${target}`;
     installBinary(archivePath, archiveBinaryName);
 
-    writeFileSync(
-      metadataPath,
-      `${JSON.stringify(
-        {
-          version: pkg.version,
-          target,
-          assetName,
-          sha256: actual,
-          installedAt: new Date().toISOString(),
-        },
-        null,
-        2,
-      )}\n`,
-      "utf8",
-    );
-
-    clearState();
-    console.log(`[postinstall] installed native binary for ${target}`);
+    console.log(`[postinstall] installed ${target} binary`);
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }
 };
 
 main().catch((error) => {
-  saveState({
-    status: "install_failed",
-    message: error instanceof Error ? error.message : String(error),
-    installedAt: new Date().toISOString(),
-  });
   console.warn(
     `[postinstall] native install failed: ${error instanceof Error ? error.message : String(error)}`,
   );

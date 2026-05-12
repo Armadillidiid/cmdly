@@ -103,8 +103,8 @@ jobs:
         with:
           name: cmdly-${{ matrix.target }}
           path: |
-            release/cmdly-${{ matrix.target }}.tar.gz
-            release/cmdly-${{ matrix.target }}.tar.gz.sha256
+            release/cmdly-v${{ needs.version.outputs.release_version }}-${{ matrix.target }}.tar.gz
+            release/cmdly-v${{ needs.version.outputs.release_version }}-${{ matrix.target }}.tar.gz.sha256
 
   release:
     name: Release assets
