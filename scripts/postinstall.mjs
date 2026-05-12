@@ -69,8 +69,14 @@ const main = () => {
 try {
 	main();
 } catch (error) {
-	console.warn(
-		`[postinstall] native install failed: ${error instanceof Error ? error.message : String(error)}`,
-	);
+	const target = detectTarget();
+	const message = error instanceof Error ? error.message : String(error);
+
+	if (target) {
+		console.error(`[postinstall] native install failed for ${target}: ${message}`);
+		process.exit(1);
+	}
+
+	console.warn(`[postinstall] native install failed on unsupported target: ${message}`);
 	process.exit(0);
 }
