@@ -20,9 +20,31 @@ const run = (cmd, args, opts) => {
   }
 };
 
+const getNpmVersion = () => {
+  const result = spawnSync("npm", ["--version"], {
+    cwd: rootDir,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  return result.stdout.trim();
+};
+
+// @changesets/cli currently only supports npm so we need to temporarily change our package manager
+const npmVersion = getNpmVersion();
 const original = JSON.parse(JSON.stringify(pkg));
+const savedPackageManager = pkg.packageManager;
+const savedDevEnginesPackageManager = JSON.parse(
+  JSON.stringify(pkg.devEngines?.packageManager),
+);
 
 original.scripts.postinstall = "node scripts/postinstall.mjs";
+original.packageManager = `npm@${npmVersion}`;
+if (original.devEngines) {
+  original.devEngines.packageManager = {
+    name: "npm",
+    version: npmVersion,
+  };
+}
 writeFileSync(pkgPath, `${JSON.stringify(original, null, "\t")}\n`, "utf8");
 
 run("pnpm", ["build"]);
@@ -33,4 +55,8 @@ run("changeset", ["tag"]);
 run("git", ["push", "--tags"]);
 
 delete original.scripts.postinstall;
+original.packageManager = savedPackageManager;
+if (original.devEngines) {
+  original.devEngines.packageManager = savedDevEnginesPackageManager;
+}
 writeFileSync(pkgPath, `${JSON.stringify(original, null, "\t")}\n`, "utf8");
