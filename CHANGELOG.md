@@ -1,5 +1,11 @@
 # cmdly
 
+## 0.2.1
+
+### Patch Changes
+
+- [#10](https://github.com/Armadillidiid/cmdly/pull/10) [`c2c6f91`](https://github.com/Armadillidiid/cmdly/commit/c2c6f914ba017dc36c7ef771433e89546f60d010) Thanks [@Armadillidiid](https://github.com/Armadillidiid)! - Add postinstall to build for other platforms and arch other than linux-x64
+
 ## 0.2.0
 
 ### Minor Changes
