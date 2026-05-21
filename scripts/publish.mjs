@@ -35,6 +35,7 @@ const savedPackageManager = pkg.packageManager;
 const savedDevEnginesPackageManager = JSON.parse(
   JSON.stringify(pkg.devEngines?.packageManager),
 );
+const savedPrepack = pkg.scripts?.prepack;
 
 // Step 1: inject postinstall only, keep pnpm as packageManager for pnpm commands
 original.scripts.postinstall = "node scripts/postinstall.mjs";
@@ -44,7 +45,9 @@ run("pnpm", ["build"]);
 run("pnpm", ["stage:bin"]);
 run("pnpm", ["vitest", "--run"]);
 
-// Step 2: switch to npm for changeset publish (it only supports npm)
+// Step 2: remove prepack (uses pnpm which won't work with npm packageManager)
+// and switch to npm for changeset publish (it only supports npm)
+delete original.scripts.prepack;
 original.packageManager = `npm@${npmVersion}`;
 if (original.devEngines) {
   original.devEngines.packageManager = {
@@ -60,6 +63,9 @@ run("git", ["push", "--tags"]);
 
 // Step 3: restore pnpm
 delete original.scripts.postinstall;
+if (savedPrepack) {
+  original.scripts.prepack = savedPrepack;
+}
 original.packageManager = savedPackageManager;
 if (original.devEngines) {
   original.devEngines.packageManager = savedDevEnginesPackageManager;
