@@ -88,22 +88,23 @@ jobs:
         uses: ./.github/actions/setup
 
       - name: Build binary
-        run: pnpm build:sea
+        run: pnpm build
 
       - name: Archive binary
         run: |
           mkdir -p release
-          cp "dist/${{ matrix.target }}/cmdly" "release/cmdly-${{ matrix.target }}"
-          tar -C release -czf "release/cmdly-${{ matrix.target }}.tar.gz" "cmdly-${{ matrix.target }}"
-          ${{ matrix.checksum_cmd }} "release/cmdly-${{ matrix.target }}.tar.gz" > "release/cmdly-${{ matrix.target }}.tar.gz.sha256"
+          ASSET_NAME="cmdly-v${{ needs.version.outputs.release_version }}-${{ matrix.target }}"
+          cp "dist/${{ matrix.target }}/cmdly" "release/${ASSET_NAME}"
+          tar -C release -czf "release/${ASSET_NAME}.tar.gz" "${ASSET_NAME}"
+          ${{ matrix.checksum_cmd }} "release/${ASSET_NAME}.tar.gz" > "release/${ASSET_NAME}.tar.gz.sha256"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: cmdly-${{ matrix.target }}
           path: |
-            release/cmdly-${{ matrix.target }}.tar.gz
-            release/cmdly-${{ matrix.target }}.tar.gz.sha256
+            release/cmdly-v${{ needs.version.outputs.release_version }}-${{ matrix.target }}.tar.gz
+            release/cmdly-v${{ needs.version.outputs.release_version }}-${{ matrix.target }}.tar.gz.sha256
 
   release:
     name: Release assets
