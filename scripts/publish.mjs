@@ -42,7 +42,7 @@ writeFileSync(pkgPath, `${JSON.stringify(original, null, "\t")}\n`, "utf8");
 
 run("pnpm", ["build"]);
 run("pnpm", ["stage:bin"]);
-run("pnpm", ["vitest"]);
+run("pnpm", ["vitest", "--run"]);
 
 // Step 2: switch to npm for changeset publish (it only supports npm)
 original.packageManager = `npm@${npmVersion}`;
